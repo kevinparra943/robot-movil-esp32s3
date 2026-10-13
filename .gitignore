@@ -1,0 +1,45 @@
+# ---- Secretos y credenciales ----
+.env
+*.env
+secrets.h
+wifi_credentials.h
+*.pem
+*.key
+
+# ---- Compilación / build ----
+build/
+.pio/
+.vscode/
+*.hex
+*.bin
+*.elf
+*.map
+
+# ---- Firmware ----
+firmware/**/build/
+
+# ---- Python ----
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# ---- LaTeX ----
+report/*.aux
+report/*.log
+report/*.out
+report/*.toc
+report/*.fls
+report/*.fdb_latexmk
+report/*.synctex.gz
+report/*.bbl
+report/*.blg
+
+# ---- Datos / capturas temporales ----
+*.tmp
+~$*
+Thumbs.db
+desktop.ini
+
+# ---- Entorno / SO ----
+.DS_Store

@@ -1,0 +1,197 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%  PLANTILLA IEEE UMNG - INFORME DE PRACTICA DE LABORATORIO %%
+%%  PROGRAMA DE INGENIERIA MECATRONICA - BOGOTA, COLOMBIA     %%
+%%  Autor plantilla: Sergio Andres Chaparro Moreno            %%
+%%  Version 1.0 - Julio 2018                                  %%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%  CONTENIDO: Robot movil inteligente con ESP32-S3          %%
+%%  NOTA: esqueleto. Las secciones marcadas [TODO] no tienen  %%
+%%  contenido real todavia. NO inventar resultados.           %%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\documentclass[journal]{IEEEtran}
+\IEEEoverridecommandlockouts
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%% PAQUETES %%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\usepackage{fancyhdr}
+\usepackage{graphicx}
+\usepackage[spanish, es-tabla]{babel}
+\usepackage[utf8]{inputenc}
+\usepackage{color}
+\usepackage{hyperref}
+\usepackage{wrapfig}
+\usepackage{array}
+\usepackage{multirow}
+\usepackage{adjustbox}
+\usepackage{nccmath}
+\usepackage{subfigure}
+\usepackage{amsfonts,latexsym}
+\usepackage{enumerate}
+\usepackage{booktabs}
+\usepackage{float}
+\usepackage{threeparttable}
+\usepackage{array,colortbl}
+\usepackage{ifpdf}
+\usepackage{rotating}
+\usepackage{cite}
+%% stfloats es opcional (flotantes a dos columnas en el pie). Si no esta
+%% instalado en tu distribucion, el informe compila igualmente.
+\IfFileExists{stfloats.sty}{\usepackage{stfloats}}{}
+\usepackage{url}
+\usepackage{listings}
+\usepackage{amsmath}
+\usepackage{makecell}
+\setcellgapes{2pt}
+
+\newcolumntype{P}[1]{>{\centering\arraybackslash}p{#1}}
+\newcommand{\tabitem}{~~\llap{\textbullet}~~}
+\newcommand{\ctt}{\centering\scriptsize\textbf}
+\newcommand{\dtt}{\scriptsize\textbf}
+\renewcommand\IEEEkeywordsname{Palabras clave}
+
+\hyphenation{op-tical net-works semi-conduc-tor}
+\graphicspath{ {figs/} }
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%% ENCABEZADO DE PAGINAS TIPO UMNG %%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\newcommand{\MYhead}{\smash{\scriptsize
+\hfil\parbox[t][\height][t]{\textwidth}{\centering
+\begin{picture}(0,0) \put(-0,-17){\IfFileExists{LogoUMNG}{\includegraphics[width=33mm]{LogoUMNG}}{}} \end{picture} \hspace{6.4cm}
+INFORME DE PRACTICA DE LABORATORIO \hspace{5.15cm} Version 1.0\\
+\hspace{6.45cm} PROGRAMA DE INGENIERIA MECATRONICA \hspace{4.65cm} Periodo 2026-2\\
+\underline{\hspace{ \textwidth}}}\hfil\hbox{}}}
+\makeatletter
+\def\ps@headings{%
+\def\@oddhead{\MYhead}%
+\def\@evenhead{\MYhead}}%
+\def\ps@IEEEtitlepagestyle{%
+\def\@oddhead{\MYhead}%
+\def\@evenhead{\MYhead}}%
+\makeatother
+\pagestyle{headings}
+\addtolength{\footskip}{0\baselineskip}
+\addtolength{\textheight}{-1\baselineskip}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%% INICIO DEL DOCUMENTO %%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{document}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% TITULO DEL DOCUMENTO %%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\title{Robot movil inteligente con ESP32-S3: control manual y por voz,
+       brujula digital, deteccion de colores y evasion de obstaculos}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%% AUTORES %%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% [TODO] Completar con los autores reales y el profesor. NO inventar nombres.
+\author{[NOMBRE DEL AUTOR 1],~y~[NOMBRE DEL AUTOR 2]\\
+        \textit{\{correo1,~correo2\}@unimilitar.edu.co}\\
+        Profesor:~[NOMBRE DEL PROFESOR]%
+\thanks{El presente documento corresponde a un informe de practica de laboratorio presentado en la Universidad Militar Nueva Granada durante el periodo 2026-2.}}
+
+\maketitle
+
+%%%%%%%%%%%%%%%%%%%%%
+%%%%%% RESUMEN %%%%%%
+%%%%%%%%%%%%%%%%%%%%%
+\begin{abstract}
+[TODO] Resumen de 150--250 palabras: que se diseno, con que hardware, que
+subsistemas integra y que se valido experimentalmente. No incluir resultados
+que no se hayan medido. No citar referencias en el resumen.
+\end{abstract}
+
+\begin{IEEEkeywords}
+robot movil, ESP32-S3, brujula digital, sensor de color, evasion de obstaculos,
+control por voz, navegacion autonoma, IoT.
+\end{IEEEkeywords}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% SECCIONES (esqueleto) %%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{Introduccion y planteamiento del problema}
+[TODO] Contexto, motivacion y problema. Citar fuentes verificables.
+
+\section{Objetivos}
+\subsection{Objetivo general}
+[TODO]
+\subsection{Objetivos especificos}
+\begin{enumerate}[1.]
+\item [TODO]
+\end{enumerate}
+
+\section{Requisitos funcionales y no funcionales}
+[TODO] Ver \texttt{docs/requisitos.md}. Resumir RF-01\dots RF-09 y los RNF.
+
+\section{Marco teorico}
+[TODO] Navegacion diferencial, magnetometria y rumbo, espacio de color
+(RGB/XYZ), sensores ultrasonicos, comunicacion inalambrica, maquinas de estados.
+
+\section{Arquitectura del sistema}
+[TODO] Ver \texttt{docs/arquitectura.md}. Incluir diagrama de bloques.
+
+\section{Diseno mecanico}
+[TODO] Chasis de acrilico, tren de traccion (2 ruedas + caster), cotas y CAD.
+Pendiente de definir la pista y las cotas finales.
+
+\section{Diseno electronico y alimentacion}
+[TODO] ESP32-S3, TB6612FNG, sensores I2C y ultrasonico, banco Li-ion 3S + BMS
++ buck a 6 V/5 V, GND comun. Ver \texttt{hardware/pinout.md}.
+
+\section{Seleccion y caracterizacion de sensores}
+[TODO] QMC5883L, TCS34725, HC-SR04. Calibraciones y limites reales.
+
+\section{Desarrollo del firmware}
+[TODO] Modulos por subsistema (ver \texttt{firmware/}), temporizacion no
+bloqueante, maquina de estados.
+
+\section{Protocolo de comunicacion y aplicacion web}
+[TODO] Protocolo JSON versionado, WebSocket, app web de control y telemetria.
+
+\section{Diseno del sistema autonomo}
+[TODO] Control de rumbo y evasion de obstaculos. Definir el error angular como:
+
+\begin{equation}
+\mathrm{error} = ((rumbo_{deseado} - rumbo_{actual} + 540) \bmod 360) - 180
+\label{eq:error_angular}
+\end{equation}
+
+\section{Implementacion del chatbot (JARVIS)}
+[TODO] Asistente por reglas + telemetria real; opcional LLM externo (clave
+fuera del repositorio).
+
+\section{Metodologia de pruebas}
+[TODO] Pruebas por modulo y por nivel (1: 4 obst./3 colores; 2: 6/4; 3: 8/6).
+Ver \texttt{docs/trazabilidad.md}.
+
+\section{Resultados experimentales}
+[TODO] Solo resultados reales medidos. Tablas y graficas.
+
+\section{Analisis de errores y limitaciones}
+[TODO]
+
+\section{Conclusiones y trabajo futuro}
+[TODO]
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%% BIBLIOGRAFIA %%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{thebibliography}{9}
+%% [TODO] Referencias verificables en formato IEEE. Ejemplos de partida:
+\bibitem{espressif} Espressif Systems, \emph{ESP32-S3 Technical Reference Manual}.
+[En linea]. Disponible en: \url{https://www.espressif.com/}
+\bibitem{qst} QST, \emph{QMC5883L Datasheet}.
+\bibitem{ams} ams, \emph{TCS34725 Color Sensor Datasheet}.
+\bibitem{toshiba} Toshiba, \emph{TB6612FNG Dual Motor Driver Datasheet}.
+\end{thebibliography}
+
+%% [TODO] Enlace al repositorio de GitHub:
+\section*{Repositorio}
+\url{https://github.com/[USUARIO]/PROYECTO_LAB}
+
+\end{document}

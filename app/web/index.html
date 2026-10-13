@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Robot ESP32-S3 — Panel de control</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header>
+    <h1>Robot móvil ESP32-S3</h1>
+    <div class="conn">
+      <span id="connDot" class="dot off"></span>
+      <span id="connText">Desconectado</span>
+    </div>
+  </header>
+
+  <main>
+    <section class="card">
+      <h2>Conexión</h2>
+      <div class="row">
+        <input id="wsUrl" type="text" value="ws://192.168.4.1:81" />
+        <button id="btnConnect">Conectar</button>
+      </div>
+      <label class="row small">
+        <input id="chkSim" type="checkbox" />
+        Modo simulación (sin robot, para probar la interfaz)
+      </label>
+      <p id="connInfo" class="small muted"></p>
+    </section>
+
+    <section class="card">
+      <h2>Modo y seguridad</h2>
+      <div class="row">
+        <button id="btnManual" class="mode">Manual</button>
+        <button id="btnAuto" class="mode">Autónomo</button>
+        <button id="btnIdle" class="mode">Detener modo</button>
+      </div>
+      <button id="btnEstop" class="estop">PARADA DE EMERGENCIA</button>
+    </section>
+
+    <section class="card">
+      <h2>Control manual</h2>
+      <div class="dpad">
+        <button class="drive" data-dir="fwd">▲</button>
+        <div class="dpad-mid">
+          <button class="drive" data-dir="left">◄</button>
+          <button class="drive stop" data-dir="stop">■</button>
+          <button class="drive" data-dir="right">►</button>
+        </div>
+        <button class="drive" data-dir="back">▼</button>
+      </div>
+      <label class="row small">Velocidad <input id="speed" type="range" min="0" max="100" value="60" /> <span id="speedVal">60</span>%</label>
+      <p class="small muted">Mantén pulsado para mover. Al soltar, el robot se detiene (deadman).</p>
+    </section>
+
+    <section class="card">
+      <h2>Voz</h2>
+      <button id="btnVoice">🎤 Hablar</button>
+      <p id="voiceNote" class="small muted"></p>
+      <p id="voiceText" class="small"></p>
+    </section>
+
+    <section class="card">
+      <h2>Telemetría</h2>
+      <div class="grid">
+        <div class="metric"><span class="label">Modo</span><span id="tMode">—</span></div>
+        <div class="metric"><span class="label">Rumbo</span><span id="tHeading">—</span></div>
+        <div class="metric"><span class="label">Rumbo deseado</span><span id="tTarget">—</span></div>
+        <div class="metric"><span class="label">Error</span><span id="tError">—</span></div>
+        <div class="metric"><span class="label">Color</span><span id="tColor">—</span><span id="swatch" class="swatch"></span></div>
+        <div class="metric"><span class="label">Distancia</span><span id="tDist">—</span></div>
+        <div class="metric"><span class="label">Motor izq.</span><span id="tLeft">—</span></div>
+        <div class="metric"><span class="label">Motor der.</span><span id="tRight">—</span></div>
+        <div class="metric"><span class="label">E-stop</span><span id="tEstop">—</span></div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>JARVIS</h2>
+      <div id="chat" class="chat"></div>
+      <div class="row">
+        <input id="jarvisInput" type="text" placeholder="Pregunta: ¿qué es el proyecto?, ¿rumbo?, ¿color?" />
+        <button id="btnJarvis">Enviar</button>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Historial</h2>
+      <div id="log" class="log"></div>
+    </section>
+  </main>
+
+  <script src="../shared/protocol.js"></script>
+  <script src="../shared/commands.js"></script>
+  <script src="../shared/jarvis.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
