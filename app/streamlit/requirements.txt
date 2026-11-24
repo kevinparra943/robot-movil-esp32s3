@@ -1,0 +1,4 @@
+streamlit>=1.37
+plotly>=5.20
+websocket-client>=1.7
+streamlit-mic-recorder>=0.0.8

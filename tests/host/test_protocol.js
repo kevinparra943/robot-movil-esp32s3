@@ -50,6 +50,16 @@ check('drive.speed>100 -> BAD_FORMAT', !r.ok && r.error.code === P.ERROR.BAD_FOR
 r = P.parse('{"t":"heading","v":1,"deg":360}');
 check('heading.deg=360 -> BAD_FORMAT', !r.ok && r.error.code === P.ERROR.BAD_FORMAT);
 
+// drive until front_obstacle (extensión v1 compatible)
+r = P.parse('{"t":"drive","v":1,"dir":"fwd","speed":60,"ts":1,"until":"front_obstacle","stop_cm":10,"max_ms":8000}');
+check('drive until front_obstacle ok', r.ok && r.msg.until === 'front_obstacle');
+r = P.parse('{"t":"drive","v":1,"dir":"fwd","speed":60,"ts":1,"until":"wall"}');
+check('drive until invalido -> BAD_FORMAT', !r.ok && r.error.code === P.ERROR.BAD_FORMAT);
+r = P.parse('{"t":"drive","v":1,"dir":"fwd","speed":60,"ts":1,"stop_cm":10}');
+check('drive stop_cm sin until -> BAD_FORMAT', !r.ok && r.error.code === P.ERROR.BAD_FORMAT);
+r = P.parse('{"t":"drive","v":1,"dir":"left","speed":60,"ts":1,"until":"front_obstacle"}');
+check('drive until solo fwd -> BAD_FORMAT', !r.ok && r.error.code === P.ERROR.BAD_FORMAT);
+
 // round-trip
 const drive = P.drive('left', 50);
 r = P.parse(P.encode(drive));
@@ -58,6 +68,24 @@ check('round-trip encode/parse', r.ok && r.msg.dir === 'left' && r.msg.speed ===
 // telemetria
 const tel = P.telemetry({ mode: 'manual', conn: true });
 check('telemetria lleva v y ts', tel.t === 'telemetry' && tel.v === 1 && typeof tel.ts === 'number');
+
+// Direccion robot -> cliente (la app tambien debe validar lo que recibe)
+let rr = P.parse(P.encode(P.helloAck()));
+check('hello_ack valido en recepcion', rr.ok && rr.msg.t === 'hello_ack');
+rr = P.parse(P.encode(P.ack('mode', 'manual')));
+check('ack valido en recepcion', rr.ok && rr.msg.of === 'mode');
+rr = P.parse(P.encode(tel));
+check('telemetry valida en recepcion', rr.ok && rr.msg.t === 'telemetry');
+rr = P.parse(P.encode(P.event('OBSTACLE_DETECTED', '34.2 cm')));
+check('event valido en recepcion', rr.ok && rr.msg.code === 'OBSTACLE_DETECTED');
+rr = P.parse(P.encode(P.error('BAD_FORMAT', 'x')));
+check('error valido en recepcion', rr.ok && rr.msg.code === 'BAD_FORMAT');
+rr = P.parse('{"t":"ack","v":1}');
+check('ack sin of -> BAD_FORMAT', !rr.ok && rr.error.code === P.ERROR.BAD_FORMAT);
+rr = P.parse('{"t":"event","v":1}');
+check('event sin code -> BAD_FORMAT', !rr.ok && rr.error.code === P.ERROR.BAD_FORMAT);
+check('validateRobot rechaza un comando', !P.validateRobot(P.hello()).ok);
+check('validateClient rechaza telemetria', !P.validateClient(P.telemetry({})).ok);
 
 // deadman
 check('isFresh dentro de TTL', P.isFresh(1000, 1000 + 400, 500) === true);

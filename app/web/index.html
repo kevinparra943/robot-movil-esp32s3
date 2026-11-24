@@ -2,98 +2,342 @@
 <html lang="es">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Robot ESP32-S3 — Panel de control</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="color-scheme" content="dark" />
+  <meta name="theme-color" content="#111820" />
+  <title>Consola de operación — Robot ESP32-S3</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%2319232D'/%3E%3Ccircle cx='16' cy='16' r='9' fill='none' stroke='%2342C9A5' stroke-width='2'/%3E%3Ccircle cx='16' cy='16' r='3' fill='%2342C9A5'/%3E%3C/svg%3E" />
+  <link rel="preload" href="fonts/ibm-plex-sans-latin.woff2" as="font" type="font/woff2" crossorigin />
   <link rel="stylesheet" href="style.css" />
 </head>
-<body>
-  <header>
-    <h1>Robot móvil ESP32-S3</h1>
-    <div class="conn">
-      <span id="connDot" class="dot off"></span>
-      <span id="connText">Desconectado</span>
+<body data-link="off">
+  <a class="skip-link" href="#main">Saltar al contenido</a>
+
+  <!-- ===================== CABECERA ===================== -->
+  <header class="topbar">
+    <div class="topbar__inner">
+      <div class="brand">
+        <svg class="brand__mark" viewBox="0 0 32 32" aria-hidden="true">
+          <circle cx="16" cy="16" r="10" fill="none" stroke="currentColor" stroke-width="2" />
+          <path d="M16 3v5M16 24v5M3 16h5M24 16h5" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+          <circle cx="16" cy="16" r="3" fill="currentColor" />
+        </svg>
+        <div class="brand__copy">
+          <h1 class="brand__name">Robot móvil ESP32-S3</h1>
+          <p class="brand__sub">Consola de operación</p>
+        </div>
+      </div>
+
+      <div class="status" role="group" aria-label="Estado del sistema">
+        <div class="status__link">
+          <span id="connDot" class="dot off" aria-hidden="true"></span>
+          <span id="connText" aria-live="polite">Desconectado</span>
+        </div>
+        <span id="simBadge" class="badge badge--info" hidden title="Los datos son sintéticos: no hay robot conectado.">SIM</span>
+        <div class="status__item">
+          <span class="status__label">Modo</span>
+          <span id="modeValue" class="status__value">—</span>
+        </div>
+        <div class="status__item status__item--telemetry">
+          <span class="status__label">Telemetría</span>
+          <span id="lastUpdate" class="status__value mono">—</span>
+        </div>
+      </div>
+
+      <button id="btnEstop" class="estop" type="button" aria-describedby="estopNote" aria-pressed="false"
+              title="Parada de software. Mantén accesible la parada física del robot.">
+        <svg class="estop__icon" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M8.2 2h7.6L22 8.2v7.6L15.8 22H8.2L2 15.8V8.2z" fill="currentColor" opacity=".22" />
+          <path d="M8.2 2h7.6L22 8.2v7.6L15.8 22H8.2L2 15.8V8.2z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" />
+          <rect x="8" y="11" width="8" height="2.2" rx="1" fill="currentColor" />
+        </svg>
+        <span class="estop__text">
+          <span class="estop__label">Parada de emergencia</span>
+          <span class="estop__sub">E-STOP</span>
+        </span>
+      </button>
+    </div>
+
+    <div id="estopBanner" class="alert alert--danger" role="alert" hidden>
+      <strong>Parada de emergencia activa · motores desactivados.</strong>
+      <span id="estopBannerText">Reinicia la placa del robot para liberar la parada.</span>
     </div>
   </header>
 
-  <main>
-    <section class="card">
-      <h2>Conexión</h2>
-      <div class="row">
-        <input id="wsUrl" type="text" value="ws://192.168.4.1:81" />
-        <button id="btnConnect">Conectar</button>
-      </div>
-      <label class="row small">
-        <input id="chkSim" type="checkbox" />
-        Modo simulación (sin robot, para probar la interfaz)
-      </label>
-      <p id="connInfo" class="small muted"></p>
-    </section>
+  <main id="main" class="console">
 
-    <section class="card">
-      <h2>Modo y seguridad</h2>
-      <div class="row">
-        <button id="btnManual" class="mode">Manual</button>
-        <button id="btnAuto" class="mode">Autónomo</button>
-        <button id="btnIdle" class="mode">Detener modo</button>
-      </div>
-      <button id="btnEstop" class="estop">PARADA DE EMERGENCIA</button>
-    </section>
+    <!-- ===================== CONTROL ===================== -->
+    <section class="area area--control" aria-label="Enlace y conducción">
 
-    <section class="card">
-      <h2>Control manual</h2>
-      <div class="dpad">
-        <button class="drive" data-dir="fwd">▲</button>
-        <div class="dpad-mid">
-          <button class="drive" data-dir="left">◄</button>
-          <button class="drive stop" data-dir="stop">■</button>
-          <button class="drive" data-dir="right">►</button>
+      <article class="card card--link" aria-labelledby="linkTitle">
+        <div class="card__head">
+          <h2 id="linkTitle">Enlace</h2>
+          <span id="connChip" class="chip">sin enlace</span>
         </div>
-        <button class="drive" data-dir="back">▼</button>
+        <label class="field-label" for="wsUrl">Dirección WebSocket del robot</label>
+        <div class="field-row">
+          <input id="wsUrl" class="input mono" type="text" value="ws://192.168.4.1:81" spellcheck="false" autocomplete="off" />
+          <button id="btnConnect" class="btn btn--primary" type="button">Conectar</button>
+        </div>
+        <label class="switch">
+          <input id="chkSim" type="checkbox" role="switch" />
+          <span class="switch__track" aria-hidden="true"><span class="switch__thumb"></span></span>
+          <span class="switch__text">
+            <span>Modo simulación</span>
+            <small>Datos sintéticos, sin robot</small>
+          </span>
+        </label>
+        <p id="connInfo" class="hint" aria-live="polite"></p>
+      </article>
+
+      <article class="card card--drive" aria-labelledby="driveTitle">
+        <div class="card__head">
+          <h2 id="driveTitle">Conducción</h2>
+          <span id="driveState" class="chip">en reposo</span>
+        </div>
+
+        <div class="segmented" role="group" aria-label="Modo de operación">
+          <button id="btnManual" class="segmented__opt" type="button" aria-pressed="false">
+            <svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="6.5" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="10" cy="10" r="2" fill="currentColor"/></svg>
+            <span>Manual</span>
+          </button>
+          <button id="btnAuto" class="segmented__opt" type="button" aria-pressed="false">
+            <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 2.5l6 14-6-3.2-6 3.2z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>
+            <span>Autónomo</span>
+          </button>
+        </div>
+
+        <p id="driveLock" class="lock" role="status">Sin enlace: conecta con el robot o activa la simulación.</p>
+
+        <div class="drive">
+          <div class="dpad" role="group" aria-label="Movimiento manual (mantener pulsado)">
+            <button class="drive-btn drive-btn--fwd" data-dir="fwd" type="button" aria-label="Avanzar">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 15l6-6 6 6"/></svg>
+              <small>Avanzar</small>
+            </button>
+            <button class="drive-btn drive-btn--left" data-dir="left" type="button" aria-label="Girar a la izquierda">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg>
+              <small>Izquierda</small>
+            </button>
+            <button class="drive-btn drive-btn--stop" data-dir="stop" type="button" aria-label="Detener">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="7" width="10" height="10" rx="1.5"/></svg>
+              <small>Detener</small>
+            </button>
+            <button class="drive-btn drive-btn--right" data-dir="right" type="button" aria-label="Girar a la derecha">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
+              <small>Derecha</small>
+            </button>
+            <button class="drive-btn drive-btn--back" data-dir="back" type="button" aria-label="Retroceder">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
+              <small>Retroceder</small>
+            </button>
+          </div>
+
+          <div class="speed">
+            <div class="speed__head">
+              <label for="speed">Velocidad</label>
+              <span class="speed__value"><output id="speedVal" for="speed">60</output><span>%</span></span>
+            </div>
+            <input id="speed" class="range" type="range" min="0" max="100" step="5" value="60" />
+            <div class="speed__scale" aria-hidden="true"><span>0</span><span>50</span><span>100</span></div>
+          </div>
+        </div>
+
+        <ul class="drive-notes">
+          <li><strong>Deadman:</strong> mantén pulsado para mover; al soltar, el robot se detiene. La orden se renueva cada 200 ms.</li>
+          <li class="drive-notes__safety">La parada de esta consola es de software y complementaria: mantén accesible la parada física del robot.</li>
+        </ul>
+      </article>
+    </section>
+
+    <!-- ===================== TELEMETRÍA ===================== -->
+    <section class="area area--telemetry" aria-labelledby="telemetryTitle">
+      <div class="area__head">
+        <h2 id="telemetryTitle">Telemetría</h2>
+        <span id="telemetryMeta" class="area__meta">Sin enlace</span>
       </div>
-      <label class="row small">Velocidad <input id="speed" type="range" min="0" max="100" value="60" /> <span id="speedVal">60</span>%</label>
-      <p class="small muted">Mantén pulsado para mover. Al soltar, el robot se detiene (deadman).</p>
+
+      <article class="card card--sonar" aria-labelledby="sonarTitle">
+        <div class="card__head">
+          <h3 id="sonarTitle">Sonares</h3>
+          <span class="legend" aria-hidden="true">
+            <span class="legend__item legend__item--warn">&lt; 60 cm aviso</span>
+            <span class="legend__item legend__item--danger">&lt; 30 cm peligro</span>
+          </span>
+        </div>
+        <div class="sonar-grid">
+          <div class="sonar is-unknown" data-sonar="left">
+            <div class="sonar__head"><span class="sonar__label">Izquierda</span><span class="sonar__state">—</span></div>
+            <span id="tDistLeft" class="sonar__value mono">—</span>
+            <div id="distBarLeft" class="meter" role="progressbar" aria-label="Distancia izquierda" aria-valuemin="0" aria-valuemax="200" aria-valuenow="0">
+              <span class="meter__fill"></span><span class="meter__mark meter__mark--danger"></span><span class="meter__mark meter__mark--warn"></span>
+            </div>
+          </div>
+          <div class="sonar sonar--front is-unknown" data-sonar="front">
+            <div class="sonar__head"><span class="sonar__label">Frente</span><span class="sonar__state">—</span></div>
+            <span id="tDist" class="sonar__value mono">—</span>
+            <div id="distBar" class="meter" role="progressbar" aria-label="Distancia frontal" aria-valuemin="0" aria-valuemax="200" aria-valuenow="0">
+              <span class="meter__fill"></span><span class="meter__mark meter__mark--danger"></span><span class="meter__mark meter__mark--warn"></span>
+            </div>
+          </div>
+          <div class="sonar is-unknown" data-sonar="right">
+            <div class="sonar__head"><span class="sonar__label">Derecha</span><span class="sonar__state">—</span></div>
+            <span id="tDistRight" class="sonar__value mono">—</span>
+            <div id="distBarRight" class="meter" role="progressbar" aria-label="Distancia derecha" aria-valuemin="0" aria-valuemax="200" aria-valuenow="0">
+              <span class="meter__fill"></span><span class="meter__mark meter__mark--danger"></span><span class="meter__mark meter__mark--warn"></span>
+            </div>
+          </div>
+        </div>
+        <p class="hint">Escala 0–200 cm.</p>
+      </article>
+
+      <article class="card card--heading" aria-labelledby="headingTitle">
+        <div class="card__head">
+          <h3 id="headingTitle">Rumbo</h3>
+          <span id="headingChip" class="chip">sin dato</span>
+        </div>
+        <div class="heading">
+          <div id="headingDial" class="dial" role="img" aria-label="Brújula sin datos">
+            <span class="dial__ticks" aria-hidden="true"></span>
+            <span class="dial__card dial__card--n" aria-hidden="true">N</span>
+            <span class="dial__card dial__card--e" aria-hidden="true">E</span>
+            <span class="dial__card dial__card--s" aria-hidden="true">S</span>
+            <span class="dial__card dial__card--o" aria-hidden="true">O</span>
+            <span id="headingTarget" class="dial__target" aria-hidden="true"></span>
+            <span id="headingNeedle" class="dial__needle" aria-hidden="true"></span>
+            <span class="dial__hub" aria-hidden="true"></span>
+          </div>
+          <dl class="readout">
+            <div class="readout__main">
+              <dt>Actual</dt>
+              <dd id="tHeading" class="mono">—</dd>
+            </div>
+            <div>
+              <dt><span class="key key--target" aria-hidden="true"></span>Deseado</dt>
+              <dd id="tTarget" class="mono">—</dd>
+            </div>
+            <div>
+              <dt>Error</dt>
+              <dd id="tError" class="mono">—</dd>
+            </div>
+          </dl>
+        </div>
+      </article>
+
+      <article class="card card--color" aria-labelledby="colorTitle">
+        <div class="card__head">
+          <h3 id="colorTitle">Color detectado</h3>
+          <span id="colorChip" class="chip">sin dato</span>
+        </div>
+        <div class="color">
+          <span id="swatch" class="swatch" role="img" aria-label="Muestra de color sin dato"></span>
+          <div class="color__copy">
+            <span id="tColor" class="color__name">sin dato</span>
+            <span id="tColorHex" class="mono color__hex">—</span>
+          </div>
+        </div>
+      </article>
+
+      <article class="card card--motors" aria-labelledby="motorsTitle">
+        <div class="card__head">
+          <h3 id="motorsTitle">Motores</h3>
+          <span class="legend" aria-hidden="true"><span>◀ reversa</span><span>avance ▶</span></span>
+        </div>
+        <div class="motor">
+          <div class="motor__head">
+            <span class="motor__label">Izquierdo</span>
+            <span id="motorLeftDir" class="motor__dir">—</span>
+            <span id="tLeft" class="motor__value mono">—</span>
+          </div>
+          <div id="motorLeftBar" class="bipolar" role="progressbar" aria-label="Motor izquierdo" aria-valuemin="-100" aria-valuemax="100" aria-valuenow="0">
+            <span class="bipolar__fill"></span><span class="bipolar__zero"></span>
+          </div>
+        </div>
+        <div class="motor">
+          <div class="motor__head">
+            <span class="motor__label">Derecho</span>
+            <span id="motorRightDir" class="motor__dir">—</span>
+            <span id="tRight" class="motor__value mono">—</span>
+          </div>
+          <div id="motorRightBar" class="bipolar" role="progressbar" aria-label="Motor derecho" aria-valuemin="-100" aria-valuemax="100" aria-valuenow="0">
+            <span class="bipolar__fill"></span><span class="bipolar__zero"></span>
+          </div>
+        </div>
+      </article>
     </section>
 
-    <section class="card">
-      <h2>Voz</h2>
-      <button id="btnVoice">🎤 Hablar</button>
-      <p id="voiceNote" class="small muted"></p>
-      <p id="voiceText" class="small"></p>
-    </section>
+    <!-- ===================== VOZ · JARVIS · REGISTRO ===================== -->
+    <section class="area area--comms" aria-label="Asistencia y registro">
 
-    <section class="card">
-      <h2>Telemetría</h2>
-      <div class="grid">
-        <div class="metric"><span class="label">Modo</span><span id="tMode">—</span></div>
-        <div class="metric"><span class="label">Rumbo</span><span id="tHeading">—</span></div>
-        <div class="metric"><span class="label">Rumbo deseado</span><span id="tTarget">—</span></div>
-        <div class="metric"><span class="label">Error</span><span id="tError">—</span></div>
-        <div class="metric"><span class="label">Color</span><span id="tColor">—</span><span id="swatch" class="swatch"></span></div>
-        <div class="metric"><span class="label">Distancia</span><span id="tDist">—</span></div>
-        <div class="metric"><span class="label">Motor izq.</span><span id="tLeft">—</span></div>
-        <div class="metric"><span class="label">Motor der.</span><span id="tRight">—</span></div>
-        <div class="metric"><span class="label">E-stop</span><span id="tEstop">—</span></div>
-      </div>
-    </section>
+      <article class="card card--assistant" aria-labelledby="assistantTitle">
+        <div class="card__head">
+          <h2 id="assistantTitle">Voz y JARVIS</h2>
+          <span id="voiceState" class="chip">listo</span>
+        </div>
 
-    <section class="card">
-      <h2>JARVIS</h2>
-      <div id="chat" class="chat"></div>
-      <div class="row">
-        <input id="jarvisInput" type="text" placeholder="Pregunta: ¿qué es el proyecto?, ¿rumbo?, ¿color?" />
-        <button id="btnJarvis">Enviar</button>
-      </div>
-    </section>
+        <p class="hint">Voz: requiere micrófono permitido y, en Chrome, conexión a internet. El WiFi del robot (AP) no da internet.</p>
 
-    <section class="card">
-      <h2>Historial</h2>
-      <div id="log" class="log"></div>
+        <div class="voice">
+          <button id="btnVoice" class="voice__btn" type="button">
+            <svg viewBox="0 0 20 20" aria-hidden="true">
+              <rect x="7.25" y="2.5" width="5.5" height="9" rx="2.75" fill="currentColor" />
+              <path d="M4.5 9.5a5.5 5.5 0 0 0 11 0M10 15v2.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
+            </svg>
+            <span>Hablar</span>
+          </button>
+          <div class="voice__copy">
+            <p id="voiceNote" class="hint"></p>
+            <p id="voiceText" class="voice__transcript mono"></p>
+          </div>
+        </div>
+
+        <div class="chat-wrap">
+          <div id="chat" class="chat" role="log" aria-live="polite" aria-label="Conversación con JARVIS"></div>
+          <div class="suggest" aria-label="Preguntas sugeridas">
+            <button class="suggest__btn" type="button" data-ask="¿Cuál es el rumbo?">Rumbo</button>
+            <button class="suggest__btn" type="button" data-ask="¿Qué color detectas?">Color</button>
+            <button class="suggest__btn" type="button" data-ask="¿A qué distancia está el obstáculo?">Distancia</button>
+            <button class="suggest__btn" type="button" data-ask="¿Cómo están los motores?">Motores</button>
+            <button class="suggest__btn" type="button" data-ask="¿Cómo está conectado el circuito?">Circuito</button>
+            <button class="suggest__btn" type="button" data-ask="ayuda">Ayuda</button>
+          </div>
+          <div class="field-row">
+            <label class="sr-only" for="jarvisInput">Pregunta para JARVIS</label>
+            <input id="jarvisInput" class="input" type="text" placeholder="Pregunta a JARVIS o da una orden…" autocomplete="off" />
+            <button id="btnJarvis" class="btn btn--secondary" type="button" aria-label="Enviar pregunta">
+              <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3 10h12M11 5l5 5-5 5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              <span>Enviar</span>
+            </button>
+          </div>
+        </div>
+      </article>
+
+      <details id="logPanel" class="card card--log" open>
+        <summary class="card__head card__head--summary">
+          <h2>Registro de eventos</h2>
+          <span id="logCount" class="chip">0</span>
+          <svg class="chevron" viewBox="0 0 20 20" aria-hidden="true"><path d="M5 8l5 5 5-5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </summary>
+        <ul id="log" class="log" role="log" aria-live="polite" aria-label="Historial de eventos"></ul>
+        <div class="log__foot">
+          <span class="hint">Más reciente arriba · máx. 200</span>
+          <button id="btnClearLog" class="btn btn--ghost" type="button">Limpiar</button>
+        </div>
+      </details>
     </section>
   </main>
 
+  <footer class="footer">
+    <p>HMI local · WebSocket JSON v1</p>
+    <p id="estopNote">La parada de emergencia web es complementaria. No sustituye la parada física ni una parada certificada.</p>
+  </footer>
+
   <script src="../shared/protocol.js"></script>
   <script src="../shared/commands.js"></script>
+  <script src="../shared/jarvis_kb.js"></script>
   <script src="../shared/jarvis.js"></script>
+  <script src="../shared/jarvis_voice.js"></script>
+  <script src="../shared/auto_panel.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

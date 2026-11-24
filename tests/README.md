@@ -13,15 +13,21 @@ Pruebas que corren **sin placa** ni navegador. Deben pasar siempre antes de
 cargar firmware.
 
 ```powershell
+python tests\host\run_all.py
 ```
 
-- Las pruebas **`.py`** se ejecutan en el propio proceso de Python.
+- Las pruebas **`.py`** se ejecutan en un subproceso de Python.
 - Las pruebas **`.js`** se ejecutan con `node` (si está en el PATH; si no, se
   omiten y se informa).
 
 | Prueba | Tipo | Cubre |
 |--------|------|-------|
-| `test_protocol.js` | Node | Protocolo v1: parseo/validación (RF-07) |
+| `test_heading.py` | Python | Normalización del error angular (RF-04) |
+| `test_color.py` | Python | Clasificación de los 6 colores (RF-05) |
+| `test_obstacle.py` | Python | Conversión, umbrales y configuración escalonada de 3 HC-SR04 (RF-06) |
+| `test_navigator.py` | Python | Navegador autónomo y sus tres submodos (RF-04, RF-06) |
+| `test_streamlit_logic.py` | Python | Voz y JARVIS del panel Streamlit (RF-08, RF-09) |
+| `test_protocol.js` | Node | Protocolo v1 en ambas direcciones (RF-07) |
 | `test_commands.js` | Node | Voz/texto → comando (RF-02) |
 | `test_jarvis.js` | Node | JARVIS por reglas (RF-09) |
 | `test_ws_integration.js` | Node | Integración WS extremo a extremo + deadman (RF-07) |

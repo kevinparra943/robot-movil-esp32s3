@@ -17,8 +17,8 @@ namespace Diagnostics {
   // Comprueba si una direccion concreta esta presente en el bus.
   bool devicePresent(uint8_t address);
 
-  // Imprime un latido con el tiempo encendido (ms).
-  void heartbeat(uint32_t uptimeMs);
+  // Imprime un latido con el tiempo encendido (ms) y el modo actual.
+  void heartbeat(uint32_t uptimeMs, bool manualMode);
 
 } // namespace Diagnostics
 

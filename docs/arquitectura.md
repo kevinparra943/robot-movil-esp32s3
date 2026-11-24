@@ -25,7 +25,7 @@
                  │            ▼             │                           │
                  │        Motores         Compass (QMC5883L)            │
                  │                        ColorSensor (TCS34725)        │
-                 │                        ObstacleSensor (HC-SR04)      │
+                 │                        ObstacleSensor ×3 (HC-SR04)   │
                  │                        Encoders                       │
                  └──────────────────────────────────────────────────────┘
 ```
@@ -44,16 +44,22 @@
 | `MotorDriver` | Control TB6612 (PWM+dir), estado seguro, límites. | `Config` |
 | `Encoder` | Lectura de cuadratura, estimación de velocidad. | `Config` |
 | `Compass` | Lectura y calibración QMC5883L, rumbo en grados. | `Config`, I²C |
-| `HeadingControl` | PI sobre error angular normalizado. | `Compass`, `MotorDriver` |
 | `ColorSensor` | Lectura TCS34725 y clasificación por umbrales. | `Config`, I²C |
-| `ObstacleSensor` | Medición HC-SR04, filtrado, detección. | `Config` |
-| `ControlManual` | Traduce comandos manuales a acciones de motor. | `MotorDriver`, `Safety` |
-| `NavigationFSM` | Navegación normal + detección/evasión de obstáculos. | `HeadingControl`, sensores |
+| `ObstacleSensor` | 3× HC-SR04 no bloqueante: medición por interrupción y disparo escalonado. | `Config` |
+| `ControlManual` | Traduce comandos manuales a acciones de motor. | `MotorDriver`, `Config` |
+| `Navigator` | Piloto autónomo con tres submodos (evadir, rumbo, línea): control P de rumbo, evasión y seguimiento de línea. | `Geometry`, `Config` |
 | `FSMGlobal` | Orquesta modos (BOOT/IDLE/MANUAL/AUTONOMO/SAFE/ERROR). | todos |
-| `Safety` | Parada de emergencia, watchdog de enlace, estado seguro. | `MotorDriver`, `Config` |
 | `Protocol` | Serialización/validación de mensajes JSON v1. | — |
 | `Wireless` | WiFi + WebSocket (servidor de telemetría/comandos). | `Protocol`, `Config` |
 | `Telemetry` | Construye el snapshot de estado. | sensores, FSM |
+
+**Estado de implementación (v0.4.0-nav):** existen todos los módulos de la tabla.
+`Navigator` reúne el control de rumbo y la navegación, y la seguridad (E-stop
+enclavado y deadman) está en `FSMGlobal`/`ControlManual`; no hay módulos
+`HeadingControl`, `NavigationFSM` ni `Safety` separados. El encoder es opcional y
+no se usa para el control. El 2026-11-24 funcionaron en el robot los sensores, la
+comunicación con la app, la voz y JARVIS (ver [`trazabilidad.md`](trazabilidad.md)). Para validar el tren
+de potencia de forma aislada se conserva `firmware/tt_motor_test/`.
 
 ## 3. Decisiones de diseño
 
@@ -80,7 +86,7 @@ como paso intermedio, **sin hacerlo a mitad del proyecto**.
 
 ### 3.3 App web (RF-08)
 
-- Página **HTML/JS** propia (sin Streamlit).
+- Interfaz **HTML/JS** propia, servida también dentro de **Streamlit** (app principal).
 - Telemetría por **WebSocket** hacia la ESP32-S3.
 - **Voz** con Web Speech API: requiere contexto seguro → servir desde `localhost`
   o HTTPS. Si la página la sirve la propia placa por HTTP plano, la voz se

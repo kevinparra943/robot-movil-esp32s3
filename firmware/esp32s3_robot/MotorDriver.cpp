@@ -70,13 +70,15 @@ void MotorDriver::apply(int in1, int in2, int pwmPin, int speed) {
 void MotorDriver::setLeft(int speed) {
   if (!_enabled) return;   // garantia de estado seguro
   _left = clamp100(speed);
-  apply(MOTOR_L_IN1, MOTOR_L_IN2, MOTOR_L_PWM, _left);
+  apply(MOTOR_L_IN1, MOTOR_L_IN2, MOTOR_L_PWM,
+        MOTOR_L_INVERT ? -_left : _left);
 }
 
 void MotorDriver::setRight(int speed) {
   if (!_enabled) return;
   _right = clamp100(speed);
-  apply(MOTOR_R_IN1, MOTOR_R_IN2, MOTOR_R_PWM, _right);
+  apply(MOTOR_R_IN1, MOTOR_R_IN2, MOTOR_R_PWM,
+        MOTOR_R_INVERT ? -_right : _right);
 }
 
 void MotorDriver::stop() {
