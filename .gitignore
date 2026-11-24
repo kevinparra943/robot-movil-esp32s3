@@ -25,15 +25,15 @@ __pycache__/
 venv/
 
 # ---- LaTeX ----
-report/*.aux
-report/*.log
-report/*.out
-report/*.toc
-report/*.fls
-report/*.fdb_latexmk
-report/*.synctex.gz
-report/*.bbl
-report/*.blg
+report/**/*.aux
+report/**/*.log
+report/**/*.out
+report/**/*.toc
+report/**/*.fls
+report/**/*.fdb_latexmk
+report/**/*.synctex.gz
+report/**/*.bbl
+report/**/*.blg
 
 # ---- Datos / capturas temporales ----
 *.tmp

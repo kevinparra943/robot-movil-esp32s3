@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="color-scheme" content="dark" />
+  <meta name="theme-color" content="#111820" />
+  <title>Robot ESP32-S3 — Centro de control</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%2319232D'/%3E%3Ccircle cx='16' cy='16' r='8' fill='none' stroke='%2342C9A5' stroke-width='2'/%3E%3Ccircle cx='16' cy='16' r='2.5' fill='%2342C9A5'/%3E%3C/svg%3E" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body data-link="off">
+
+  <!-- ============================ BARRA SUPERIOR ============================ -->
+  <header class="hud">
+    <div class="hud__id">
+      <svg class="hud__mark" viewBox="0 0 24 24" aria-hidden="true">
+        <circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="1.8"/>
+        <circle cx="12" cy="12" r="2.4" fill="currentColor"/>
+      </svg>
+      <h1 class="hud__name">Robot ESP32-S3</h1>
+    </div>
+
+    <div class="hud__state" role="status" aria-live="polite">
+      <span id="connDot" class="dot off" aria-hidden="true"></span>
+      <span id="connText">Desconectado</span>
+      <span class="hud__sep" aria-hidden="true"></span>
+      <span class="hud__mode"><span class="hud__mode-label">Modo</span> <span id="modeTag">—</span></span>
+      <span id="estopTag" class="sr-only">E-stop inactiva</span>
+    </div>
+
+    <div class="hud__actions">
+      <button id="btnSettings" class="tool" type="button" aria-expanded="false" aria-controls="settings">
+        <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3 6.5h9m3 0h2M3 13.5h2m3 0h9" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><circle cx="13.5" cy="6.5" r="1.8" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="6.5" cy="13.5" r="1.8" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>
+        <span class="tool__text">Conexión</span>
+      </button>
+      <button id="btnAssistant" class="tool" type="button" aria-expanded="false" aria-controls="assistant">
+        <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 4.5h12a1.5 1.5 0 0 1 1.5 1.5v6.5A1.5 1.5 0 0 1 16 14H9l-4 3v-3H4a1.5 1.5 0 0 1-1.5-1.5V6A1.5 1.5 0 0 1 4 4.5z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>
+        <span class="tool__text">JARVIS</span>
+      </button>
+      <button class="estop" type="button" data-estop aria-describedby="estopNote"
+              title="Parada de software: mantén una parada física accesible junto al robot.">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8.2 2.5h7.6l5.7 5.7v7.6l-5.7 5.7H8.2l-5.7-5.7V8.2z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M8 12h8" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>
+        <span class="estop-face">Parada de emergencia</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Solo visible con e-stop activa -->
+  <div id="estopBanner" class="estop-banner" role="alert" hidden>
+    <strong>Parada de emergencia activa · motores desactivados.</strong>
+    <span>Reinicia la placa del robot para liberar la parada.</span>
+  </div>
+
+  <!-- ===================== CONEXIÓN (plegable) ===================== -->
+  <section id="settings" class="settings" aria-label="Conexión con el robot">
+    <div class="settings__clip">
+      <div class="settings__inner">
+        <label class="settings__label" for="wsUrl">Dirección del robot</label>
+        <input id="wsUrl" class="field mono" type="text" spellcheck="false" autocomplete="off" value="ws://192.168.4.1:81" />
+        <button id="btnConnect" class="btn btn--primary" type="button">Conectar</button>
+        <label class="toggle">
+          <input id="chkSim" type="checkbox" role="switch" />
+          <span class="toggle__track" aria-hidden="true"></span>
+          <span>Simulación <span class="muted">· sin robot</span></span>
+        </label>
+        <p id="connInfo" class="settings__info" hidden></p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================ ESCENA ============================ -->
+  <main class="console">
+
+    <section class="stage" aria-labelledby="h-drive">
+      <h2 id="h-drive" class="sr-only">Conducción</h2>
+
+      <p id="stageHint" class="stage-hint">
+        El robot no está conectado.
+        <button id="hintConnect" class="link" type="button">Conectar</button>
+        o
+        <button id="hintSim" class="link" type="button">usar la simulación</button>.
+      </p>
+
+      <div class="modes" role="group" aria-label="Modo de operación">
+        <button class="mode" type="button" data-mode="manual" aria-pressed="false">Manual</button>
+        <button class="mode" type="button" data-mode="autonomo" aria-pressed="false">Autónomo</button>
+      </div>
+
+      <!-- Distancias alrededor del control: la posición indica el lado -->
+      <div class="drive-zone">
+        <div class="sonar sonar--front" id="sonarF">
+          <span class="inst-label">Frente</span>
+          <span class="inst-value mono">—</span>
+          <div class="bar"><div class="bar-fill"></div><span class="bar-threshold" title="Umbral 30 cm"></span></div>
+          <span class="inst-near" hidden>Cerca</span>
+        </div>
+        <div class="sonar sonar--left" id="sonarL">
+          <span class="inst-label">Izquierda</span>
+          <span class="inst-value mono">—</span>
+          <div class="bar"><div class="bar-fill"></div><span class="bar-threshold" title="Umbral 30 cm"></span></div>
+          <span class="inst-near" hidden>Cerca</span>
+        </div>
+        <div class="sonar sonar--right" id="sonarR">
+          <span class="inst-label">Derecha</span>
+          <span class="inst-value mono">—</span>
+          <div class="bar"><div class="bar-fill"></div><span class="bar-threshold" title="Umbral 30 cm"></span></div>
+          <span class="inst-near" hidden>Cerca</span>
+        </div>
+
+        <div class="dpad" role="group" aria-label="Conducción manual: mantener pulsado">
+          <button class="drive drive--fwd" type="button" data-dir="fwd" aria-label="Avanzar">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 14.5l6-6 6 6"/></svg>
+          </button>
+          <button class="drive drive--left" type="button" data-dir="left" aria-label="Girar a la izquierda">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.5 6l-6 6 6 6"/></svg>
+          </button>
+          <button class="drive drive-stop" type="button" data-dir="stop" aria-label="Detener">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="7.5" y="7.5" width="9" height="9" rx="1.5"/></svg>
+          </button>
+          <button class="drive drive--right" type="button" data-dir="right" aria-label="Girar a la derecha">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9.5 6l6 6-6 6"/></svg>
+          </button>
+          <button class="drive drive--back" type="button" data-dir="back" aria-label="Retroceder">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9.5l6 6 6-6"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <p id="driveStatus" class="drive-status" aria-live="polite">Sin conexión</p>
+
+      <div class="speed">
+        <label for="speed">Velocidad</label>
+        <input id="speed" type="range" min="0" max="100" step="5" value="60" />
+        <output id="speedVal" class="mono" for="speed">60 %</output>
+      </div>
+
+      <p class="stage-note">
+        Mantén pulsada una flecha para mover; al soltar, se detiene.
+        <span id="estopNote">Parada web complementaria: mantén accesible la parada física del robot.</span>
+      </p>
+    </section>
+
+    <!-- ===================== INSTRUMENTOS ===================== -->
+    <aside class="rail" aria-labelledby="h-rail">
+      <h2 id="h-rail" class="sr-only">Telemetría</h2>
+      <p id="telemetrySource" class="rail__source">Sin datos · robot desconectado</p>
+
+      <section class="group" aria-labelledby="h-compass">
+        <h3 id="h-compass" class="group__title">Rumbo</h3>
+        <div class="compass-wrap off">
+          <svg class="compass" viewBox="0 0 200 200" role="img" aria-label="Rosa de rumbo con aguja de rumbo actual">
+            <circle class="rose-ring" cx="100" cy="100" r="92"/>
+            <g class="ticks">
+              <line x1="100" y1="10" x2="100" y2="24"/>
+              <line x1="100" y1="10" x2="100" y2="24" transform="rotate(90 100 100)"/>
+              <line x1="100" y1="10" x2="100" y2="24" transform="rotate(180 100 100)"/>
+              <line x1="100" y1="10" x2="100" y2="24" transform="rotate(270 100 100)"/>
+              <line class="minor" x1="100" y1="10" x2="100" y2="17" transform="rotate(45 100 100)"/>
+              <line class="minor" x1="100" y1="10" x2="100" y2="17" transform="rotate(135 100 100)"/>
+              <line class="minor" x1="100" y1="10" x2="100" y2="17" transform="rotate(225 100 100)"/>
+              <line class="minor" x1="100" y1="10" x2="100" y2="17" transform="rotate(315 100 100)"/>
+            </g>
+            <text class="cardinal" x="100" y="48" text-anchor="middle">N</text>
+            <!-- Rumbo deseado: marca ámbar sobre el anillo (se toca la rosa para fijarlo) -->
+            <g id="targetMark" class="target-mark is-off">
+              <polygon points="100,26 91,6 109,6"/>
+            </g>
+            <g id="needle" class="needle">
+              <polygon class="needle-tip" points="100,30 92,100 108,100"/>
+              <polygon class="needle-tail" points="92,100 108,100 100,150"/>
+              <circle class="needle-hub" cx="100" cy="100" r="6"/>
+            </g>
+          </svg>
+          <div class="heading-data">
+            <span id="headingRead" class="heading-value mono">—</span>
+            <dl class="heading-meta">
+              <div><dt>Objetivo</dt><dd id="headingTarget" class="mono">—</dd></div>
+              <div><dt>Error</dt><dd id="headingError" class="mono">—</dd></div>
+            </dl>
+          </div>
+        </div>
+        <form id="targetForm" class="target-row" autocomplete="off">
+          <label class="sr-only" for="targetDeg">Rumbo deseado en grados (0 a 359)</label>
+          <input id="targetDeg" class="field mono" type="number" min="0" max="359" step="1"
+                 inputmode="numeric" placeholder="0–359°" />
+          <button class="btn" type="submit">Fijar rumbo</button>
+        </form>
+        <div class="target-quick" role="group" aria-label="Rumbos rápidos">
+          <button class="btn btn--compact mono" type="button" data-target="0">N</button>
+          <button class="btn btn--compact mono" type="button" data-target="90">E</button>
+          <button class="btn btn--compact mono" type="button" data-target="180">S</button>
+          <button class="btn btn--compact mono" type="button" data-target="270">O</button>
+        </div>
+        <p class="target-hint">Toca la rosa o escribe los grados. El robot sigue este rumbo en modo Autónomo.</p>
+      </section>
+
+      <section class="group" aria-labelledby="h-motors">
+        <h3 id="h-motors" class="group__title">Motores</h3>
+        <div class="motor" id="motorL">
+          <span class="inst-label">Izquierdo</span>
+          <div class="bipolar"><div class="bi-fill"></div><span class="bi-zero"></span></div>
+          <span class="inst-value mono">—</span>
+        </div>
+        <div class="motor" id="motorR">
+          <span class="inst-label">Derecho</span>
+          <div class="bipolar"><div class="bi-fill"></div><span class="bi-zero"></span></div>
+          <span class="inst-value mono">—</span>
+        </div>
+      </section>
+
+      <section class="group" aria-labelledby="h-color">
+        <h3 id="h-color" class="group__title">Color</h3>
+        <div class="color-inst">
+          <span class="color-swatch" id="colorSwatch" aria-hidden="true"></span>
+          <span id="colorName">—</span>
+          <span id="colorHex" class="mono muted">—</span>
+        </div>
+      </section>
+    </aside>
+  </main>
+
+  <!-- ============================ REGISTRO ============================ -->
+  <details class="logbar" id="logPanel">
+    <summary class="logbar__summary">
+      <span class="logbar__title">Registro</span>
+      <span id="logLast" class="logbar__last"></span>
+      <span id="logCount" class="logbar__count mono">0</span>
+      <svg class="logbar__chev" viewBox="0 0 20 20" aria-hidden="true"><path d="M5 12.5l5-5 5 5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </summary>
+    <div id="log" class="log" role="log" aria-label="Historial de eventos"></div>
+  </details>
+
+  <!-- ============================ JARVIS (cajón) ============================ -->
+  <aside id="assistant" class="drawer" aria-labelledby="h-jarvis" inert>
+    <div class="drawer__head">
+      <h2 id="h-jarvis">JARVIS</h2>
+      <button id="btnAssistantClose" class="tool tool--icon" type="button" aria-label="Cerrar JARVIS">
+        <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5.5 5.5l9 9m0-9l-9 9" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+
+    <div class="voice">
+      <button id="btnVoice" type="button" class="voice-btn">
+        <svg viewBox="0 0 20 20" aria-hidden="true">
+          <rect x="7.25" y="2.5" width="5.5" height="9" rx="2.75" fill="currentColor"/>
+          <path d="M4.5 9.5a5.5 5.5 0 0 0 11 0M10 15v2.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+        </svg>
+        <span>Hablar</span>
+      </button>
+      <div class="voice__copy">
+        <p class="muted"><span id="voiceState" class="status">listo</span></p>
+        <p id="voiceNote" class="muted">Voz: en Chrome suele requerir internet; el WiFi del robot (AP) no da internet.</p>
+        <p id="voiceText" class="voice-text"></p>
+      </div>
+    </div>
+
+    <div id="chat" class="chat" aria-live="polite"></div>
+
+    <div class="suggest">
+      <button type="button" data-ask="¿Cuál es el rumbo?">Rumbo</button>
+      <button type="button" data-ask="¿A qué distancia está el obstáculo?">Distancia</button>
+      <button type="button" data-ask="¿Qué color detectas?">Color</button>
+      <button type="button" data-ask="¿Cómo está conectado el circuito?">Circuito</button>
+      <button type="button" data-ask="ayuda">Ayuda</button>
+    </div>
+    <div class="jarvis-row">
+      <label class="sr-only" for="jarvisInput">Pregunta a JARVIS</label>
+      <input id="jarvisInput" class="field" type="text" placeholder="Pregunta o da una orden (p. ej. ¿qué es el PWM?)" autocomplete="off" />
+      <button id="btnJarvis" type="button" class="btn">Enviar</button>
+    </div>
+  </aside>
+
+  <script src="../../shared/protocol.js"></script>
+  <script src="../../shared/commands.js"></script>
+  <script src="../../shared/jarvis_kb.js"></script>
+  <script src="../../shared/jarvis.js"></script>
+  <script src="../../shared/jarvis_voice.js"></script>
+  <script src="../../shared/auto_panel.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

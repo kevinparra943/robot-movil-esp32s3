@@ -51,7 +51,7 @@
 \newcommand{\dtt}{\scriptsize\textbf}
 \renewcommand\IEEEkeywordsname{Palabras clave}
 
-\graphicspath{{figs/}}
+\graphicspath{{../../cad/}}
 
 \hypersetup{
     colorlinks=true,
@@ -141,7 +141,7 @@ Profesor: Diego Alejandro Barragán Vargas\\
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \begin{abstract}
-Este informe presenta la arquitectura y el estado de desarrollo de un robot móvil inteligente basado en el microcontrolador ESP32. El proyecto usa una plataforma diferencial de dos ruedas motrices y una rueda de apoyo. El robot está pensado para recibir órdenes manuales y de voz, medir su orientación con una brújula digital, reconocer seis colores, detectar obstáculos y enviar telemetría a una aplicación web hecha con HTML y JavaScript. La comunicación entre la aplicación y el robot se plantea por Wi-Fi y WebSocket, mientras que un asistente llamado JARVIS usa reglas de software para explicar el sistema y responder preguntas sobre las variables disponibles. Se describen los requisitos funcionales y no funcionales, la arquitectura por módulos, los componentes elegidos, la asignación preliminar de pines, el protocolo de comunicación y la máquina de estados global. También se documentan las pruebas de software reportadas y lo que queda pendiente de integración. El diseño CAD está en una etapa inicial, el esquema eléctrico definitivo está pendiente y la comunicación Wi-Fi del firmware todavía no se ha probado con el microcontrolador físico. Por eso, los resultados de software se presentan aparte de las pruebas físicas que faltan por hacer.
+Este informe presenta la arquitectura y el estado de desarrollo de un robot móvil inteligente basado en el microcontrolador ESP32. El proyecto usa una plataforma diferencial de dos ruedas motrices y una rueda de apoyo. El robot está pensado para recibir órdenes manuales y de voz, medir su orientación con una brújula digital, reconocer seis colores, detectar obstáculos y enviar telemetría a una aplicación web hecha con HTML y JavaScript. La comunicación entre la aplicación y el robot se plantea por Wi-Fi y WebSocket, mientras que un asistente llamado JARVIS usa reglas de software para explicar el sistema y responder preguntas sobre las variables disponibles. Se describen los requisitos funcionales y no funcionales, la arquitectura por módulos, los componentes elegidos, la asignación preliminar de pines, el protocolo de comunicación y la máquina de estados global. También se documentan las pruebas de software reportadas y lo que queda pendiente de integración. El diseño CAD está en una etapa inicial y el esquema eléctrico definitivo está pendiente. El servidor Wi-Fi/WebSocket del firmware ya está implementado y arranca en la placa, pero la conexión extremo a extremo con la aplicación web todavía no se ha validado en el prototipo físico. La calibración del sensor de color sí se verificó en banco con los seis colores y el firmware ya integra tres HC-SR04 con disparo escalonado; en la primera prueba el sensor izquierdo entregó lecturas estables, mientras que el derecho fue intermitente y el frontal no dio eco. La validación completa de los obstáculos y las demás pruebas físicas, como la navegación y la evasión, siguen pendientes.
 \end{abstract}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -162,9 +162,9 @@ Los robots móviles combinan partes mecánicas, electrónicas y de software para
 
 El ESP32 es el corazón del proyecto. Sobre este microcontrolador se planea una arquitectura por módulos que permita manejar los motores, leer los sensores, controlar los modos de trabajo y enviar datos a una aplicación inalámbrica. Separar el sistema en módulos independientes facilita armarlo por partes y encontrar fallos durante las pruebas.
 
-El sistema se plantea con tracción diferencial: dos ruedas motrices y una rueda de apoyo. La orientación se obtiene con un módulo de brújula digital GY-271, basado en el magnetómetro QMC5883L. El color se detecta con un sensor TCS34725 y los obstáculos con un sensor ultrasónico HC-SR04. Para mover los motores se eligió un controlador TB6612FNG.
+El sistema se plantea con tracción diferencial: dos ruedas motrices y una rueda de apoyo. La orientación se obtiene con un módulo de brújula digital GY-271, basado en el magnetómetro QMC5883L. El color se detecta con un sensor TCS34725 y los obstáculos con tres sensores ultrasónicos HC-SR04 (frontal, izquierdo y derecho). Para mover los motores se eligió un controlador TB6612FNG.
 
-La aplicación de supervisión ya está hecha a nivel de software, pero todavía no se ha probado con el ESP32 físico. La comunicación prevista usa Wi-Fi y WebSocket, con mensajes ordenados que permiten pedir cambios de modo, enviar órdenes de movimiento y recibir telemetría. El asistente JARVIS también se hizo con reglas de software. Su conexión con datos físicos reales depende de que la comunicación y los sensores funcionen.
+La aplicación de supervisión ya está hecha a nivel de software. El servidor Wi-Fi/WebSocket del firmware también está implementado y arranca en la placa, pero la conexión extremo a extremo con la aplicación todavía no se ha validado. La comunicación usa Wi-Fi y WebSocket, con mensajes ordenados que permiten pedir cambios de modo, enviar órdenes de movimiento y recibir telemetría. El asistente JARVIS también se hizo con reglas de software. Su conexión con datos físicos reales depende de que la comunicación y los sensores funcionen.
 
 Este documento corresponde al Corte 2 y presenta los requisitos, la arquitectura, las decisiones de diseño y las evidencias de software disponibles. El diseño mecánico está en una etapa inicial y el esquema eléctrico definitivo está pendiente. Por eso no se presentan como resultados experimentales las funciones que aún no se han probado en el prototipo físico.
 
@@ -229,9 +229,9 @@ Control manual del movimiento del robot desde la aplicación. & Aplicación desa
 Interpretar comandos de voz o texto y convertirlos en órdenes de control. & Procesamiento de comandos hecho en software; falta la validación completa. \\
 Manejar los modos manual y autónomo con una máquina de estados, sin que funcionen a la vez. & Arquitectura de firmware definida; falta la integración física. \\
 Obtener y mostrar la orientación del robot en grados con una brújula digital. & Módulo de sensor previsto; faltan calibración y validación física. \\
-Reconocer los colores negro, blanco, rojo, amarillo, verde y azul. & Clasificación evaluada en software; falta la calibración física. \\
+Reconocer los colores negro, blanco, rojo, amarillo, verde y azul. & Clasificación evaluada en software y calibrada en banco; seis de seis aciertos por color. \\
 Detectar obstáculos y hacer una maniobra de evasión para seguir la trayectoria. & Conversión de distancia lista en software; falta validar la maniobra autónoma. \\
-Comunicación inalámbrica con un protocolo con versión y un tiempo de caducidad para los comandos. & Protocolo y pruebas de software listos; falta el Wi-Fi en el firmware. \\
+Comunicación inalámbrica con un protocolo con versión y un tiempo de caducidad para los comandos. & Servidor Wi-Fi/WebSocket integrado y arranca en la placa; falta validar la conexión desde la aplicación. \\
 Mostrar controles y telemetría en una aplicación web. & Aplicación hecha; falta conectarla con el ESP32 físico. \\
 Incorporar un asistente JARVIS que explique el proyecto y responda sobre la información disponible. & Asistente por reglas hecho en software; falta conectarlo a las variables físicas. \\
 \bottomrule
@@ -333,7 +333,7 @@ B_n=\frac{B}{R+G+B}}
 \label{eq:normalizacion_color}
 \end{equation}
 
-donde $R$, $G$ y $B$ son las lecturas de cada canal. Si la suma es cero o muy pequeña, la clasificación se considera inválida. Los umbrales para identificar negro, blanco, rojo, amarillo, verde y azul deben obtenerse midiendo el sensor real con la iluminación controlada.
+donde $R$, $G$ y $B$ son las lecturas de cada canal. Si la suma es cero o muy pequeña, la clasificación se considera inválida. Los umbrales para identificar negro, blanco, rojo, amarillo, verde y azul se obtuvieron midiendo el sensor real en banco con iluminación controlada (Tabla~\ref{tab:color}).
 
 \subsection{Detección ultrasónica de obstáculos}
 
@@ -346,7 +346,11 @@ d=\frac{c\,t}{2}
 
 donde $d$ es la distancia al objeto, $c$ es la velocidad del sonido en el medio y $t$ es el tiempo total de ida y vuelta. El factor dos aparece porque la onda recorre el trayecto hasta el obstáculo y regresa.
 
-El pin ECHO del HC-SR04 puede entregar unos $5~\mathrm{V}$, que es más de lo que admite una entrada del ESP32. Por eso se propone un divisor resistivo de $1~\mathrm{k}\Omega$ y $2~\mathrm{k}\Omega$.
+El pin ECHO de cada HC-SR04 puede entregar unos $5~\mathrm{V}$, que es más de lo que admite una entrada del ESP32. Por eso se propone un divisor resistivo de $1~\mathrm{k}\Omega$ y $2~\mathrm{k}\Omega$ por sensor.
+
+Para cubrir el entorno inmediato se usan tres HC-SR04: frontal, izquierdo y derecho. El firmware los dispara de forma escalonada cada $30~\mathrm{ms}$, con un periodo de $90~\mathrm{ms}$ por sensor, para reducir la interferencia entre pulsos. La medición es no bloqueante: una interrupción mide la anchura del pulso ECHO y el cálculo de distancia se hace fuera de ella. La telemetría conserva el campo \texttt{obstacle} para el sensor frontal y añade \texttt{obstacle\_left} y \texttt{obstacle\_right}.
+
+En la prueba inicial en placa, el sensor izquierdo reportó valores estables cercanos a $61~\mathrm{cm}$, el derecho dio lecturas intermitentes de $243$ a $246~\mathrm{cm}$ y el frontal no entregó eco. Estos resultados confirman que el firmware de tres sensores compila y ejecuta, pero el montaje físico del frontal y la repetibilidad del derecho todavía deben revisarse.
 
 Detectar un obstáculo no garantiza esquivarlo bien. La distancia de activación, el ángulo de giro y la forma de retomar la trayectoria deben calibrarse en el robot armado.
 
@@ -356,7 +360,7 @@ WebSocket mantiene un canal de comunicación en los dos sentidos entre un client
 
 Los mensajes usan una estructura JSON con campos comunes: tipo de mensaje, versión del protocolo y marca de tiempo. El protocolo valida los comandos y usa un tiempo de caducidad para que las órdenes de movimiento no queden activas para siempre.
 
-Que el protocolo funcione en software no significa que la comunicación inalámbrica con el ESP32 físico ya esté lista. La integración Wi-Fi del firmware sigue pendiente.
+Que el protocolo funcione en software no significa que la comunicación inalámbrica esté validada de extremo a extremo. El servidor Wi-Fi/WebSocket ya está integrado en el firmware y arranca en la placa, pero la conexión real desde la aplicación web sigue pendiente de validación.
 
 \subsection{Máquina de estados finitos}
 
@@ -381,7 +385,7 @@ La arquitectura se divide en cinco subsistemas:
 
     \item \textbf{Subsistema de accionamiento:} motores DC con reductora, controlador TB6612FNG y alimentación de potencia.
 
-    \item \textbf{Subsistema de percepción:} magnetómetro QMC5883L, sensor de color TCS34725 y sensor ultrasónico HC-SR04.
+    \item \textbf{Subsistema de percepción:} magnetómetro QMC5883L, sensor de color TCS34725 y tres sensores ultrasónicos HC-SR04.
 
     \item \textbf{Subsistema de control embebido:} ESP32, firmware por módulos, máquina de estados, seguridad y manejo de sensores y motores.
 
@@ -409,7 +413,7 @@ En el sentido contrario, el firmware lee los sensores, revisa que las mediciones
 \node[block,right=0.6cm of app] (jarvis) {Asistente JARVIS\\basado en reglas};
 \node[block,below=0.7cm of app] (ws) {Comunicación\\Wi-Fi / WebSocket};
 \node[block,below=0.7cm of ws] (esp) {ESP32\\Firmware por módulos};
-\node[wide] (sens) at ($(esp.south)+(-1.8,-1.15)$) {Sensores\\QMC5883L, TCS34725, HC-SR04};
+\node[wide] (sens) at ($(esp.south)+(-1.8,-1.15)$) {Sensores\\QMC5883L, TCS34725, 3$\times$ HC-SR04};
 \node[wide] (drv) at ($(esp.south)+(1.8,-1.15)$) {TB6612FNG\\y motores DC};
 
 \draw[line] (app) -- (ws);
@@ -491,7 +495,7 @@ Motores DC con reductora TT, 6 V, 110 rpm, relación 1:90 & Tracción diferencia
 TB6612FNG & Etapa de potencia & Controla el sentido de giro y la potencia (PWM) de los motores DC. \\
 GY-271 con QMC5883L & Medición de orientación & Da mediciones del campo magnético para estimar el rumbo. Necesita calibración y revisión de interferencias. \\
 TCS34725 & Detección de color & Entrega lecturas RGB y de intensidad para clasificar colores. \\
-HC-SR04 & Detección de obstáculos & Estima distancias por ultrasonido. Su salida ECHO necesita adaptación de nivel. \\
+3$\times$ HC-SR04 & Detección de obstáculos & Estiman distancias frontal, izquierda y derecha por ultrasonido. Cada salida ECHO necesita adaptación de nivel. \\
 Batería de ion-litio 3S con BMS & Alimentación principal & Da la energía del sistema. Debe usarse con protecciones y convertidores DC-DC. \\
 Convertidor reductor a 6 V & Alimentación de motores & Adapta la tensión de la batería al nivel previsto para los motores. \\
 Convertidor reductor a 5 V & Alimentación de lógica y periféricos & Da una línea regulada para los módulos que la necesiten; cada uno se alimenta según su hoja de datos. \\
@@ -528,7 +532,7 @@ La distribución mecánica debe cumplir estas condiciones:
 \begin{itemize}
     \item Mantener alineados los ejes de las ruedas motrices para reducir desviaciones.
     \item Ubicar el centro de masa para que las ruedas motrices tengan buen contacto con el suelo.
-    \item Poner el sensor ultrasónico con visión despejada hacia adelante.
+    \item Poner los sensores ultrasónicos con visión despejada hacia adelante y los laterales.
     \item Orientar el sensor de color hacia la superficie y controlar su distancia.
     \item Alejar, en lo posible, el magnetómetro de los motores, los cables de corriente y las piezas metálicas.
     \item Dejar acceso a los conectores, al pulsador de emergencia y a los puntos de mantenimiento.
@@ -558,9 +562,9 @@ El pin STBY se conecta a GPIO18 según la asignación preliminar. Debe usarse en
 
 Los valores de frecuencia PWM, resolución y límites de velocidad deben definirse en el firmware y probarse con los motores reales. No se presentan velocidades medidas, corrientes de operación ni curvas de respuesta porque esas pruebas físicas aún faltan.
 
-\subsection{Adaptación de señal del sensor ultrasónico}
+\subsection{Adaptación de señal de los sensores ultrasónicos}
 
-El pin ECHO del HC-SR04 puede llegar a un nivel mayor del que admite una entrada del ESP32. Por eso se propone un divisor resistivo con una resistencia de $1~\mathrm{k}\Omega$ en serie y una de $2~\mathrm{k}\Omega$ hacia tierra.
+Los pines ECHO de los tres HC-SR04 pueden llegar a un nivel mayor del que admite una entrada del ESP32. Por eso se propone un divisor resistivo por sensor, con una resistencia de $1~\mathrm{k}\Omega$ en serie y una de $2~\mathrm{k}\Omega$ hacia tierra.
 
 La tensión ideal en la salida del divisor es:
 
@@ -600,8 +604,12 @@ La Tabla~\ref{tab:pinout} resume la asignación de pines definida para el firmwa
 \midrule
 I2C SDA & GPIO8 & Línea de datos del bus I2C. \\
 I2C SCL & GPIO9 & Línea de reloj del bus I2C. \\
-HC-SR04 TRIG & GPIO10 & Genera el pulso de disparo ultrasónico. \\
-HC-SR04 ECHO & GPIO11 & Entrada del tiempo de retorno, con divisor resistivo. \\
+HC-SR04 frontal TRIG & GPIO10 & Genera el pulso de disparo ultrasónico frontal. \\
+HC-SR04 frontal ECHO & GPIO11 & Entrada del tiempo de retorno frontal, con divisor resistivo. \\
+HC-SR04 izquierdo TRIG & GPIO38 & Genera el pulso de disparo ultrasónico izquierdo. \\
+HC-SR04 izquierdo ECHO & GPIO39 & Entrada del tiempo de retorno izquierdo, con divisor resistivo. \\
+HC-SR04 derecho TRIG & GPIO40 & Genera el pulso de disparo ultrasónico derecho. \\
+HC-SR04 derecho ECHO & GPIO41 & Entrada del tiempo de retorno derecho, con divisor resistivo. \\
 Motor izquierdo IN1 & GPIO4 & Control de dirección del motor izquierdo. \\
 Motor izquierdo IN2 & GPIO5 & Control de dirección del motor izquierdo. \\
 Motor izquierdo PWM & GPIO6 & Señal PWM del motor izquierdo. \\
@@ -610,9 +618,9 @@ Motor derecho IN2 & GPIO15 & Control de dirección del motor derecho. \\
 Motor derecho PWM & GPIO16 & Señal PWM del motor derecho. \\
 TB6612FNG STBY & GPIO18 & Habilitación del controlador de motores. \\
 Encoder izquierdo A & GPIO12 & Entrada de pulsos del encoder izquierdo. \\
-Encoder derecho A & GPIO13 & Entrada de pulsos del encoder derecho. \\
-Encoder izquierdo B & GPIO14 & Entrada reservada según la asignación de referencia. \\
-Encoder derecho B & GPIO21 & Entrada reservada según la asignación de referencia. \\
+Encoder izquierdo B & GPIO13 & Entrada reservada (el motor TT tiene una sola salida). \\
+Encoder derecho A & GPIO14 & Entrada de pulsos del encoder derecho. \\
+Encoder derecho B & GPIO21 & Entrada reservada (el motor TT tiene una sola salida). \\
 Parada de emergencia & GPIO47 & Entrada propuesta para el pulsador de emergencia. \\
 \bottomrule
 \end{tabular}
@@ -653,7 +661,7 @@ La estructura prevista del firmware se organiza en estos módulos:
     \item \texttt{Geometry}: cálculos geométricos y parámetros de la plataforma.
     \item \texttt{Compass}: lectura y procesamiento de la brújula.
     \item \texttt{ColorSensor}: lectura y clasificación de color.
-    \item \texttt{ObstacleSensor}: lectura de distancia del sensor ultrasónico.
+    \item \texttt{ObstacleSensor}: lectura no bloqueante de los tres sensores ultrasónicos, con disparo escalonado.
     \item \texttt{Encoder}: conteo de pulsos disponibles.
     \item \texttt{Protocol}: valida los mensajes recibidos y arma las respuestas.
     \item \texttt{Wireless}: comunicación inalámbrica.
@@ -665,7 +673,7 @@ La estructura prevista del firmware se organiza en estos módulos:
     \item \texttt{Safety}: parada de emergencia y estado seguro.
 \end{itemize}
 
-Que un módulo exista en la arquitectura no significa que ya esté terminado en el hardware. En particular, la comunicación Wi-Fi del firmware, el control completo de orientación, la navegación autónoma integrada y las pruebas de motores necesitan más trabajo.
+Que un módulo exista en la arquitectura no significa que ya esté terminado en el hardware. El servidor Wi-Fi/WebSocket ya está integrado y arranca en la placa, pero la conexión desde la aplicación, el control completo de orientación y la navegación autónoma integrada necesitan más trabajo. Para las pruebas de motores se preparó un sketch independiente, \texttt{firmware/tt\_motor\_test}, que permite verificar cableado, sentido de giro, PWM, STBY y parada por deadman sin cargar la lógica de navegación. El sketch compila y se probó en el banco de pruebas (T-Motor-01, 2026-11-07).
 
 \subsection{Estado seguro}
 
@@ -685,7 +693,7 @@ El comportamiento seguro es un requisito de diseño, no algo ya probado en esta 
 
 La aplicación de supervisión está hecha a nivel de software y busca permitir el control manual, el cambio de modo, la visualización de variables y la interacción con JARVIS. Falta probarla con el ESP32 físico.
 
-El transporte elegido es WebSocket sobre Wi-Fi. El firmware deberá aceptar conexiones, validar los mensajes, ejecutar los comandos permitidos y devolver las respuestas y la telemetría.
+El transporte elegido es WebSocket sobre Wi-Fi. El firmware ya implementa el servidor, valida los mensajes, ejecuta los comandos permitidos y devuelve respuestas y telemetría; falta validar la conexión real desde la aplicación.
 
 El repositorio del proyecto está en:
 
@@ -788,15 +796,36 @@ La estrategia final debe tener en cuenta el ruido del magnetómetro, el retardo 
 
 \subsection{Evasión de obstáculos}
 
-La evasión debe combinar las mediciones del HC-SR04 con la lógica de navegación. Cuando la distancia cumple la condición de obstáculo, el sistema debe detenerse o reducir el avance, girar y luego decidir si puede continuar.
+La evasión debe combinar las mediciones de los tres HC-SR04 con la lógica de navegación. Cuando una distancia cumple la condición de obstáculo, el sistema debe detenerse o reducir el avance, girar y luego decidir si puede continuar.
 
 La distancia de detección, el ángulo de evasión, el tiempo de giro y la condición para retomar el movimiento deben definirse experimentalmente. No se le atribuye al prototipo un número de obstáculos superados hasta hacer y documentar esas pruebas.
 
 \subsection{Detección de seis colores}
 
-La clasificación prevista cubre los colores negro, blanco, rojo, amarillo, verde y azul. Para que sea estable hay que registrar lecturas de referencia con una iluminación parecida a la del lugar de uso.
+La clasificación cubre los colores negro, blanco, rojo, amarillo, verde y azul. El sensor se configuró con ganancia de 16x y un tiempo de integración de 103 ms. El LED del módulo queda encendido de forma permanente, por lo que la luz es cálida y la clasificación depende de la distancia y del montaje.
 
-La calibración debe tener en cuenta la distancia entre el sensor y la superficie, el brillo del material y la luz del ambiente. Los umbrales deben guardarse como parámetros ajustables y probarse con muestras distintas a las usadas para calibrarlos.
+La calibración se hizo con muestras de referencia en banco. Se registraron lecturas RGB y el canal clear, y se ajustaron umbrales de saturación y proporciones entre canales. La Tabla~\ref{tab:color} resume las muestras finales: cada color se repitió seis veces y las seis lecturas coincidieron con la etiqueta esperada. Los umbrales quedaron en \texttt{Config.h} y la lógica se replica en \texttt{tests/host/test\_color.py}.
+
+\begin{table}[t]
+\centering
+\caption{Muestras finales de calibración del TCS34725 (16x, 103 ms, LED cálido)}
+\label{tab:color}
+\scriptsize
+\begin{tabular}{lccc}
+\toprule
+\textbf{Color} & \textbf{RGB} & \textbf{Clear} & \textbf{Aciertos} \\
+\midrule
+Negro    & (312, 258, 221) & 819  & 6/6 \\
+Blanco   & (627, 506, 373) & 1553 & 6/6 \\
+Rojo     & (663, 371, 288) & 1349 & 6/6 \\
+Amarillo & (734, 548, 305) & 1646 & 6/6 \\
+Verde    & (346, 319, 231) & 922  & 6/6 \\
+Azul     & (326, 292, 251) & 894  & 6/6 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+La separación más estrecha está entre negro, azul y verde. Por eso el clasificador combina el matiz con proporciones entre canales y no depende de un solo umbral. Si cambia el LED, la distancia o la superficie, hay que repetir la calibración.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%% ASISTENTE JARVIS %%%%%%%%%%%%%%%%%%%%%
@@ -826,7 +855,7 @@ Se identificaron las funciones principales del robot: control manual, comandos d
 
 \subsection{Etapa 2: selección de componentes}
 
-Se eligieron el ESP32, el controlador TB6612FNG, los motores TT con reductora, el magnetómetro QMC5883L, el sensor TCS34725 y el sensor ultrasónico HC-SR04. Además se definió una asignación preliminar de pines y una arquitectura de alimentación que necesita un esquema eléctrico definitivo.
+Se eligieron el ESP32, el controlador TB6612FNG, los motores TT con reductora, el magnetómetro QMC5883L, el sensor TCS34725 y tres sensores ultrasónicos HC-SR04. Además se definió una asignación preliminar de pines y una arquitectura de alimentación que necesita un esquema eléctrico definitivo.
 
 \subsection{Etapa 3: diseño mecánico}
 
@@ -842,7 +871,7 @@ Se ejecutaron pruebas para comprobar cálculos, validación de mensajes, interpr
 
 \subsection{Etapa 6: integración y validación física pendiente}
 
-La integración futura incluye armar el esquema eléctrico, probar la alimentación, hacer funcionar los motores, calibrar los sensores, conectar el Wi-Fi real y probar la navegación. Los resultados deben quedar registrados con datos, condiciones de prueba y evidencias fotográficas.
+La integración futura incluye armar el esquema eléctrico, probar la alimentación, calibrar los sensores, validar la conexión Wi-Fi/WebSocket real con la aplicación y probar la navegación. Los resultados deben quedar registrados con datos, condiciones de prueba y evidencias fotográficas.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%% RESULTADOS DE SOFTWARE %%%%%%%%%%%%%%%
@@ -852,9 +881,9 @@ La integración futura incluye armar el esquema eléctrico, probar la alimentaci
 
 \subsection{Compilación del firmware}
 
-Se reporta una compilación satisfactoria del firmware de arranque seguro y módulos de sensores. La compilación usó el entorno Arduino para ESP32 y la placa ESP32. El tamaño informado fue de aproximadamente $26\%$ de la memoria de programa y $7\%$ de la memoria global reportada por la herramienta.
+Se reporta una compilación satisfactoria del firmware v0.3.0-ws, que incluye arranque seguro, sensores, control manual y servidor WiFi/WebSocket. La compilación usó el entorno Arduino para ESP32 y la placa ESP32-S3. El tamaño informado fue de aproximadamente $74\%$ de la memoria de programa y $15\%$ de la memoria global reportada por la herramienta. También compila el sketch independiente \texttt{tt\_motor\_test}, que usa el mismo \texttt{Config.h} y el módulo \texttt{MotorDriver} para el banco de pruebas de los motores TT.
 
-Estos porcentajes describen el resultado de compilación y no demuestran que todos los módulos funcionen en el dispositivo físico. La comunicación Wi-Fi, la navegación autónoma y la integración completa de sensores y motores siguen pendientes de validación.
+Estos porcentajes describen el resultado de compilación y no demuestran que todos los módulos funcionen en el dispositivo físico. El AP y el servidor WebSocket arrancan en la placa (verificado por log serie), pero la conexión desde la aplicación, la navegación autónoma y la integración completa de sensores y motores siguen pendientes de validación.
 
 \subsection{Pruebas de software reportadas}
 
@@ -870,8 +899,8 @@ Se reportaron siete grupos de pruebas de software, ejecutados en el entorno de d
 \textbf{Prueba} & \textbf{Alcance} \\
 \midrule
 Normalización angular & Comprobar el cálculo de ángulos y el intervalo del error angular. \\
-Clasificación de color & Verificar la lógica de clasificación con entradas de software. \\
-Conversión de distancia HC-SR04 & Comprobar la conversión de tiempo de eco a distancia. \\
+Clasificación de color & Verificar la lógica con entradas de software y con las muestras reales de los seis colores. \\
+Conversión de distancia y 3 HC-SR04 & Comprobar la conversión de tiempo de eco a distancia y la consistencia del disparo escalonado. \\
 Protocolo versión 1 & Validar el análisis y la estructura de los mensajes. \\
 Interpretación de voz/texto & Comprobar la conversión de expresiones en comandos. \\
 Asistente JARVIS & Verificar las respuestas basadas en reglas. \\
@@ -880,7 +909,7 @@ Integración WebSocket y caducidad & Evaluar el intercambio de mensajes y la exp
 \end{tabular}
 \end{table*}
 
-Estos resultados corresponden a pruebas de software del proyecto. No deben interpretarse como siete pruebas físicas del robot. Para que sean reproducibles, conviene guardar en el repositorio los comandos de ejecución, las versiones de las herramientas, las entradas de prueba, las salidas y los registros de cada corrida.
+Estos resultados corresponden a pruebas de software del proyecto. No deben interpretarse como siete pruebas físicas del robot; la calibración de color en placa se reporta aparte en la Tabla~\ref{tab:color}. Para que sean reproducibles, conviene guardar en el repositorio los comandos de ejecución, las versiones de las herramientas, las entradas de prueba, las salidas y los registros de cada corrida.
 
 \subsection{Trazabilidad}
 
@@ -897,11 +926,11 @@ La trazabilidad relaciona los requisitos con los módulos y las pruebas que perm
 \midrule
 Aplicación, Protocol, ControlManual, MotorDriver & Integración de comandos & Movimiento real y sentido de giro \\
 Aplicación, intérprete de comandos, Protocol & Interpretación de voz/texto & Comandos ejecutados en el robot \\
-FSMGlobal, Safety, ControlManual, NavigationFSM & Pruebas de lógica de estados por completar & Exclusión de modos y estado seguro \\
+FSMGlobal, ControlManual, NavigationFSM & Pruebas de lógica de estados por completar & Exclusión de modos y estado seguro \\
 Compass, HeadingControl, Geometry & Normalización angular & Calibración y seguimiento de rumbo \\
-ColorSensor & Clasificación de color & Lecturas reales de los seis colores \\
-ObstacleSensor, NavigationFSM & Conversión de distancia & Detección y evasión en el entorno real \\
-Protocol, Wireless, Safety & Protocolo y caducidad en WebSocket simulado & Conexión Wi-Fi y pérdida de comunicación \\
+ColorSensor & Clasificación de color & Calibración en banco completada (6/6 por color); falta caracterizar la pista real \\
+ObstacleSensor (3×), NavigationFSM & Conversión de distancia y configuración escalonada & Lectura parcial: izquierdo OK, derecho intermitente, frontal sin eco; falta detección y evasión en el entorno \\
+Protocol, Wireless, FSMGlobal & Protocolo y caducidad simulados; servidor WS en placa & Conexión Wi-Fi real desde la app y pérdida de comunicación \\
 Aplicación web, Telemetry & Integración simulada & Conexión con el ESP32 físico \\
 JARVIS, Telemetry, aplicación & Respuestas basadas en reglas & Respuestas vinculadas a variables reales \\
 \bottomrule
@@ -921,21 +950,21 @@ El estado actual del proyecto tiene limitaciones que deben tenerse en cuenta al 
 
     \item El esquema eléctrico definitivo está pendiente. Antes de energizar el sistema hay que verificar la alimentación, la compatibilidad de niveles, la distribución de tierra y las protecciones.
 
-    \item La comunicación Wi-Fi del firmware está pendiente de integración y validación con el ESP32 físico.
+    \item El servidor Wi-Fi/WebSocket del firmware está integrado y arranca en la placa, pero la conexión desde la aplicación y la validación extremo a extremo con el ESP32 físico siguen pendientes.
 
-    \item La aplicación está hecha, pero no se ha probado con el microcontrolador físico.
+    \item La aplicación está hecha, pero no se ha probado contra el servidor del microcontrolador físico.
 
     \item JARVIS funciona con reglas de software; su conexión con telemetría física real todavía no está demostrada.
 
-    \item El número real de pulsos por revolución de los encoders debe medirse y documentarse.
+    \item El PPR de los encoders es opcional y no se usa para odometría (decisión 2026-11-07); si se retoma esa función, debe medirse y documentarse.
 
     \item Las dimensiones mecánicas definitivas y los parámetros geométricos para la navegación todavía deben establecerse.
 
-    \item La calibración de la brújula y del sensor de color debe hacerse con el montaje final.
+    \item La calibración de la brújula sigue pendiente; la del sensor de color se realizó en banco y debe repetirse si cambia el montaje.
 
     \item Los umbrales de detección de obstáculos, el ángulo de evasión y la estrategia para retomar la trayectoria deben determinarse experimentalmente.
 
-    \item Todavía no hay resultados físicos que demuestren el número de obstáculos superados, la identificación estable de colores o la precisión del seguimiento de rumbo.
+    \item Todavía no hay resultados físicos que demuestren el número de obstáculos superados, la precisión del seguimiento de rumbo o la identificación de colores en la pista; la calibración de color en banco sí quedó verificada.
 \end{itemize}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -979,7 +1008,7 @@ Para saber qué nivel se alcanza, cada obstáculo y cada color deben probarse en
 
     \item \textbf{Colores:} probar cada color previsto con varias muestras y registrar la matriz de clasificación.
 
-    \item \textbf{Obstáculos:} comparar la distancia del HC-SR04 con distancias de referencia y probar las maniobras de evasión.
+    \item \textbf{Obstáculos:} comparar las distancias de los tres HC-SR04 con distancias de referencia y probar las maniobras de evasión.
 
     \item \textbf{Navegación:} comprobar el control de orientación, el giro hacia el ángulo deseado y la recuperación de la trayectoria tras una evasión.
 
@@ -997,17 +1026,17 @@ Los resultados de estas pruebas se agregarán cuando se realicen. Hasta entonces
 \begin{itemize}
     \item Se definió una arquitectura por módulos para un robot móvil basado en ESP32, con subsistemas de accionamiento, percepción, control embebido y supervisión inalámbrica.
 
-    \item Se eligieron los componentes principales: ESP32, motores DC con reductora, controlador TB6612FNG, magnetómetro QMC5883L, sensor de color TCS34725 y sensor ultrasónico HC-SR04.
+    \item Se eligieron los componentes principales: ESP32, motores DC con reductora, controlador TB6612FNG, magnetómetro QMC5883L, sensor de color TCS34725 y tres sensores ultrasónicos HC-SR04.
 
-    \item Se definió una asignación preliminar de pines y se identificaron puntos eléctricos importantes, como adaptar el nivel de ECHO del sensor ultrasónico y verificar las tensiones de alimentación de los módulos.
+    \item Se definió una asignación preliminar de pines y se identificaron puntos eléctricos importantes, como adaptar el nivel de ECHO de los tres sensores ultrasónicos y verificar las tensiones de alimentación de los módulos.
 
     \item Se planteó una máquina de estados que separa los modos manual y autónomo e incluye estados de seguridad y error. Su comportamiento debe verificarse en la integración física.
 
     \item Se desarrolló software para el protocolo, la aplicación, la interpretación de comandos y el asistente JARVIS. Se reportaron siete grupos de pruebas de software sin fallos, incluyendo pruebas de integración con un robot simulado por WebSocket.
 
-    \item Los resultados disponibles son de software y compilación. No permiten concluir que la comunicación Wi-Fi con el ESP32, la navegación autónoma, la detección física de seis colores o la evasión de obstáculos ya estén validadas por completo.
+    \item Los resultados disponibles incluyen software, compilación y calibración de color en banco. No permiten concluir que la conexión Wi-Fi/WebSocket con la aplicación, la navegación autónoma o la evasión de obstáculos ya estén validadas por completo.
 
-    \item Falta completar el diseño CAD, elaborar el esquema eléctrico definitivo, integrar el Wi-Fi en el firmware, medir los encoders y hacer las pruebas físicas necesarias para saber el nivel de alcance realmente logrado.
+    \item Falta completar el diseño CAD, elaborar el esquema eléctrico definitivo, validar la conexión Wi-Fi/WebSocket con la aplicación, medir los encoders si se retoma la odometría y hacer las pruebas físicas necesarias para saber el nivel de alcance realmente logrado.
 \end{itemize}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -1023,13 +1052,13 @@ Estas actividades permitirán pasar de la arquitectura y las pruebas de software
 
     \item Elaborar el esquema eléctrico completo con las protecciones necesarias.
 
-    \item Confirmar el pinout real, verificar las direcciones I2C y medir los pulsos por revolución de los encoders.
+    \item Confirmar el pinout real, verificar las direcciones I2C y, si se retoma la odometría, medir los pulsos por revolución de los encoders.
 
-    \item Integrar el servidor Wi-Fi/WebSocket en el firmware y verificar el intercambio de mensajes con la aplicación.
+    \item Verificar la conexión Wi-Fi/WebSocket con la aplicación; el servidor ya está integrado en el firmware y arranca en la placa.
 
-    \item Implementar y validar la parada segura, la caducidad de comandos y la recuperación ante errores.
+    \item Validar en hardware la parada segura, el E-stop enclavado, la caducidad de comandos y la recuperación ante errores; el firmware ya los implementa.
 
-    \item Calibrar la brújula y el sensor de color en el montaje final.
+    \item Calibrar la brújula en el montaje final y repetir la calibración de color si cambia el LED, la distancia o la superficie.
 
     \item Ajustar el control de orientación y la estrategia de evasión con pruebas repetibles.
 
