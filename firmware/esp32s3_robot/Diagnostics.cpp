@@ -11,7 +11,7 @@ void printBanner() {
   Serial.print(F(FIRMWARE_NAME));
   Serial.print(F("  v"));
   Serial.println(F(FIRMWARE_VERSION));
-  Serial.println(F("  T-00: bring-up seguro (motores DETENIDOS)"));
+  Serial.println(F("  T-00: bring-up seguro (STBY=LOW al arrancar)"));
   Serial.println(F("====================================================="));
 }
 
@@ -52,10 +52,11 @@ uint8_t scanI2C() {
   return found;
 }
 
-void heartbeat(uint32_t uptimeMs) {
+void heartbeat(uint32_t uptimeMs, bool manualMode) {
   Serial.print(F("[HB] t="));
   Serial.print(uptimeMs);
-  Serial.println(F(" ms  estado=DETENIDO"));
+  Serial.print(F(" ms  estado="));
+  Serial.println(manualMode ? F("MANUAL") : F("DETENIDO"));
 }
 
 } // namespace Diagnostics

@@ -93,6 +93,8 @@ class MockRobot {
     this.heading = { actual: 87.5, target: 90.0, error: -2.5 };
     this.color = { name: 'verde', rgb: [120, 200, 90], valid: true };
     this.obstacle = { distance_cm: 34.2, valid: true, blocked: false };
+    this.obstacleLeft = { distance_cm: 60.0, valid: true, blocked: false };
+    this.obstacleRight = { distance_cm: 45.0, valid: true, blocked: false };
     this._lastDrive = 0;
     this._driveDir = 'stop';
     this._timer = setInterval(() => this._tick(), 50);
@@ -131,8 +133,10 @@ class MockRobot {
       heading: this.heading,
       color: this.color,
       obstacle: this.obstacle,
+      obstacle_left: this.obstacleLeft,
+      obstacle_right: this.obstacleRight,
       motors: this.motors,
-      nav: { state: 'IDLE', level: 1 },
+      nav: { state: 'IDLE', level: 1, strategy: this.mode === 'autonomo' ? this.strategy : null },
       estop: this.estop
     };
   }
@@ -167,13 +171,22 @@ class MockRobot {
         if (['manual', 'autonomo'].indexOf(msg.value) === -1) {
           return client.send(JSON.stringify({ t: 'error', v: 1, code: 'BAD_FORMAT', detail: 'mode.value' }));
         }
+        if (msg.value === 'autonomo' && ['evadir', 'rumbo', 'linea'].indexOf(msg.strategy) === -1) {
+          return client.send(JSON.stringify({ t: 'error', v: 1, code: 'BAD_FORMAT', detail: 'falta mode.strategy' }));
+        }
         this.mode = msg.value;
+        this.strategy = msg.strategy || null;
+        if (msg.deg !== undefined) {
+          this.heading.target = msg.deg;
+          this.heading.error = ((msg.deg - this.heading.actual + 540) % 360) - 180;
+        }
         client.send(JSON.stringify({ t: 'ack', v: 1, of: 'mode', value: msg.value }));
         break;
       case 'drive':
         if (['fwd', 'back', 'left', 'right', 'stop'].indexOf(msg.dir) === -1) {
           return client.send(JSON.stringify({ t: 'error', v: 1, code: 'BAD_FORMAT', detail: 'drive.dir' }));
         }
+        if (msg.dir === 'stop' && this.mode === 'autonomo') this.mode = 'idle';
         this._lastDrive = Date.now();
         this._applyDrive(msg.dir, typeof msg.speed === 'number' ? msg.speed : 60);
         client.send(JSON.stringify({ t: 'ack', v: 1, of: 'drive', value: msg.dir }));
@@ -190,7 +203,7 @@ class MockRobot {
         client.send(JSON.stringify({ t: 'event', v: 1, ts: Date.now(), code: 'ESTOP', detail: 'parada de emergencia' }));
         break;
       case 'calib':
-        client.send(JSON.stringify({ t: 'ack', v: 1, of: 'calib', value: msg.what + ':' + msg.action }));
+        client.send(JSON.stringify({ t: 'error', v: 1, code: 'UNSUPPORTED', detail: 'calibracion no implementada' }));
         break;
       default:
         client.send(JSON.stringify({ t: 'error', v: 1, code: 'UNKNOWN_CMD', detail: msg.t }));
@@ -258,3 +271,12 @@ function startMockRobot(opts) {
 }
 
 module.exports = { startMockRobot, encodeFrame, decodeFrames, PROTOCOL_VERSION, COMMAND_TTL_MS };
+
+// Uso como proceso independiente (p. ej. para la app Streamlit):
+//   node tests/host/mock_robot_server.js [puerto]   (por defecto 8765)
+if (require.main === module) {
+  const port = parseInt(process.argv[2], 10) || 8765;
+  startMockRobot({ port }).then((r) => {
+    console.log('Robot simulado en ws://127.0.0.1:' + r.port + '  (Ctrl+C para salir)');
+  });
+}

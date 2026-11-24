@@ -1,16 +1,20 @@
 #include "ObstacleSensor.h"
 #include "Config.h"
 
-ObstacleSensor *ObstacleSensor::_instance = nullptr;
+static uint32_t s_lastTriggerUs = 0;
 
-void ObstacleSensor::isrThunk() {
-  if (_instance) _instance->isrChange();
+ObstacleSensor::ObstacleSensor(uint8_t trigPin, uint8_t echoPin, uint16_t phaseMs)
+    : _trigPin(trigPin), _echoPin(echoPin), _phaseMs(phaseMs) {}
+
+void ObstacleSensor::isrThunk(void *arg) {
+  ObstacleSensor *self = static_cast<ObstacleSensor *>(arg);
+  if (self) self->isrChange();
 }
 
 // ISR: mide la anchura del pulso de ECHO sin bloquear el programa.
-void IRAM_ATTR ObstacleSensor::isrChange() {
+void ObstacleSensor::isrChange() {
   uint32_t now = micros();
-  if (digitalRead(SONAR_ECHO_PIN) == HIGH) {
+  if (digitalRead(_echoPin) == HIGH) {
     _echoStartUs = now;
     _echoActive = true;
   } else if (_echoActive) {
@@ -22,11 +26,11 @@ void IRAM_ATTR ObstacleSensor::isrChange() {
 }
 
 void ObstacleSensor::begin() {
-  _instance = this;
-  pinMode(SONAR_TRIG_PIN, OUTPUT);
-  digitalWrite(SONAR_TRIG_PIN, LOW);
-  pinMode(SONAR_ECHO_PIN, INPUT);
-  attachInterrupt(digitalPinToInterrupt(SONAR_ECHO_PIN), isrThunk, CHANGE);
+  pinMode(_trigPin, OUTPUT);
+  digitalWrite(_trigPin, LOW);
+  pinMode(_echoPin, INPUT);
+  attachInterruptArg(digitalPinToInterrupt(_echoPin), isrThunk, this, CHANGE);
+  _nextTriggerUs = micros() + (uint32_t)_phaseMs * 1000UL;
 }
 
 void ObstacleSensor::update(uint32_t nowUs) {
@@ -35,7 +39,7 @@ void ObstacleSensor::update(uint32_t nowUs) {
     _echoDone = false;
     _waiting = false;
     _hasReading = true;
-    _nextTriggerUs = nowUs + (uint32_t)SONAR_PERIOD_MS * 1000UL;
+    _nextTriggerUs = _trigSentUs + (uint32_t)SONAR_PERIOD_MS * 1000UL;
     // Distancia = tiempo * (cm/us) / 2  (ida y vuelta)
     float cm = (float)_pulseUs * SOUND_CM_PER_US * 0.5f;
     if (cm >= SONAR_MIN_CM && cm <= SONAR_MAX_CM) {
@@ -48,20 +52,24 @@ void ObstacleSensor::update(uint32_t nowUs) {
   }
 
   // 2) Timeout: se disparo pero no llego eco (fuera de rango / sin obstaculo).
-  if (_waiting && (nowUs - _trigSentUs) > SONAR_TIMEOUT_US) {
+  if (_waiting && (uint32_t)(nowUs - _trigSentUs) > SONAR_TIMEOUT_US) {
     _waiting = false;
     _hasReading = true;
     _valid = false;
     _distanceCm = NAN;
-    _nextTriggerUs = nowUs + (uint32_t)SONAR_PERIOD_MS * 1000UL;
+    _nextTriggerUs = _trigSentUs + (uint32_t)SONAR_PERIOD_MS * 1000UL;
   }
 
-  // 3) Si no esta midiendo y toca, dispara una nueva medicion.
-  if (!_waiting && nowUs >= _nextTriggerUs) {
-    digitalWrite(SONAR_TRIG_PIN, HIGH);
+  // 3) Si no esta midiendo, toca y hay separacion respecto al ultimo disparo.
+  bool due = (int32_t)(nowUs - _nextTriggerUs) >= 0;
+  bool spaced = (int32_t)(nowUs - s_lastTriggerUs) >= (int32_t)SONAR_STAGGER_US;
+  if (!_waiting && due && spaced) {
+    digitalWrite(_trigPin, HIGH);
     delayMicroseconds(10);
-    digitalWrite(SONAR_TRIG_PIN, LOW);
+    digitalWrite(_trigPin, LOW);
     _trigSentUs = micros();
+    s_lastTriggerUs = _trigSentUs;
+    _nextTriggerUs = _trigSentUs + (uint32_t)SONAR_PERIOD_MS * 1000UL;
     _waiting = true;
   }
 }

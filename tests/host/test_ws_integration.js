@@ -18,8 +18,10 @@ function connect(url) {
     const inbox = [];
     const waiters = [];
     ws.onmessage = (ev) => {
-      let m;
-      try { m = JSON.parse(ev.data); } catch (e) { return; }
+      // Usa el mismo parser que la app: valida mensajes robot -> cliente.
+      const r = P.parse(ev.data);
+      if (!r.ok) return;
+      const m = r.msg;
       const i = waiters.findIndex((w) => w.pred(m));
       if (i >= 0) { const w = waiters.splice(i, 1)[0]; w.resolve(m); }
       else inbox.push(m);
@@ -83,8 +85,8 @@ async function main() {
   c.send({ t: 'status', v: 1 });
   const t = await c.waitFor((x) => x.t === 'telemetry');
   check('telemetria v=1', t.v === 1);
-  check('telemetria trae rumbo/color/obstaculo',
-    t.heading && t.color && t.obstacle);
+  check('telemetria trae rumbo/color/obstaculos',
+    t.heading && t.color && t.obstacle && t.obstacle_left && t.obstacle_right);
 
   // estop: ack + event, y rechazo por SAFETY de comandos de movimiento
   c.send(P.estop());

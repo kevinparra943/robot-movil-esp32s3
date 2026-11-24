@@ -1,8 +1,7 @@
 # Lista de materiales (BOM)
 
-> **Fuente de verdad:** `hardware/BOM.xlsx` 
-> `hardware/BOM.xlsx`). **Precios orientativos en COP**, a
-> confirmar antes de comprar.
+> **Fuente de verdad:** `hardware/BOM.xlsx`. **Precios orientativos en COP**,
+> a confirmar antes de comprar.
 
 ## Resumen por categoría
 
@@ -33,8 +32,13 @@ fabricado en acrílico**. El detalle, con cantidades, precios y estado
 
 - **Batería 3S**: 11,1 V nominal / 12,6 V llena. **Obliga** a buck a 6 V
   (motores) y 5 V (lógica). Seguridad: BMS + fusible + carga supervisada.
-- **Sensor de color TCS34725**: distinguir **6 colores** puede exigir
-  calibración estricta; si no separa, se documenta como limitación.
+- **Sensor de color TCS34725**: calibrado en banco (2026-11-09) para los
+  **6 colores**, con **6/6 lecturas correctas por color**. El LED va siempre
+  encendido (pin `LED` al aire), así que la clasificación depende de la
+  distancia y de la luz cálida; repetir T-Color-01 si cambia el montaje.
+  Umbrales finales en `Config.h`.
 - **Brújula GY-271**: el HMC5883L está descatalogado; usar **QMC5883L**.
-  Requiere calibración y alejarla de motores.
-- **HC-SR04**: ECHO entrega 5 V → **divisor resistivo** a 3,3 V.
+  Requiere calibración y alejarla de motores. **Funciona** (2026-11-24).
+- **HC-SR04**: se usan **3 unidades** (frontal y laterales); ECHO entrega 5 V
+  → **divisor resistivo** a 3,3 V en cada una. El firmware lee los 3 y
+  **funcionan en el robot** (2026-11-24).

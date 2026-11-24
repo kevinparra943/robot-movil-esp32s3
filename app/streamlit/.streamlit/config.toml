@@ -1,0 +1,15 @@
+# Configuración de la app Streamlit del robot.
+# Tema oscuro con el mismo fondo que la interfaz v2 (app/web/v2/style.css)
+# para que no se vean bordes de otro color alrededor de ella.
+
+[client]
+toolbarMode = "minimal"
+
+[theme]
+base = "dark"
+backgroundColor = "#111820"
+secondaryBackgroundColor = "#19232d"
+textColor = "#e8eef2"
+primaryColor = "#42c9a5"
+paddingTop = "0.5rem"
+paddingBottom = "0.5rem"
